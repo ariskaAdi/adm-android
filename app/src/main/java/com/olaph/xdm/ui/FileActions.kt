@@ -26,7 +26,7 @@ object FileActions {
         if (mime == MimeTypes.APK && !context.packageManager.canRequestPackageInstalls()) {
             // Android asks once per source app. Send the user to XDM's "Install unknown apps" switch;
             // tapping Open again afterwards goes straight to the installer.
-            Toast.makeText(context, "Allow ADM to install apps, then tap Open again", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Allow LangsungDownload to install apps, then tap Open again", Toast.LENGTH_LONG).show()
             val settings = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             try {

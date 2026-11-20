@@ -42,7 +42,7 @@ data class DownloadEntity(
     val error: String? = null,
     /** content:// Uri (API 29+) or absolute path (API 26-28) of the finished file. */
     val savedLocation: String? = null,
-    /** Human readable location, e.g. "Download/ADM/file.zip". */
+    /** Human readable location, e.g. "Download/LangsungDownload/file.zip". */
     val savedPath: String? = null,
     /** "Start now": ignore the max-parallel limit once. */
     val forceStart: Boolean = false,

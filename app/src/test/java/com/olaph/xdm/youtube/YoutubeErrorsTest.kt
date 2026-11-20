@@ -72,7 +72,7 @@ class YoutubeErrorsTest {
         assertEquals(YtErrorKind.EXTRACTOR_CHANGED, kind(ParsingException("Could not get name")))
         assertEquals(YtErrorKind.EXTRACTOR_CHANGED, kind(ExtractionException("ANDROID player response is not valid")))
         assertEquals(YtErrorKind.EXTRACTOR_CHANGED, kind(ParsingException("Could not parse", NullPointerException())))
-        assertEquals("YouTube changed something; ADM needs an update.", YtErrorKind.EXTRACTOR_CHANGED.message)
+        assertEquals("YouTube changed something; LangsungDownload needs an update.", YtErrorKind.EXTRACTOR_CHANGED.message)
     }
 
     @Test fun anythingElseTheLibraryThrowsIsContainedToo() {

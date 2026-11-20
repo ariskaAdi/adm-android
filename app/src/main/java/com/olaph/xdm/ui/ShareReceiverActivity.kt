@@ -21,7 +21,7 @@ import com.olaph.xdm.engine.UrlUtils
 import com.olaph.xdm.service.DownloadService
 
 /**
- * Transparent entry point for "Share → ADM" and "Open with → ADM": shows only the add sheet on top of
+ * Transparent entry point for "Share → LangsungDownload" and "Open with → LangsungDownload": shows only the add sheet on top of
  * the calling app, so the user never has to open the full UI.
  */
 class ShareReceiverActivity : ComponentActivity() {

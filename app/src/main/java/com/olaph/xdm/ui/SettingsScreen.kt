@@ -152,7 +152,7 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
             }
             Text("Lock the private folder", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 4.dp))
             Text(
-                "When ADM goes to the background. Turning the screen off always locks it.",
+                "When LangsungDownload goes to the background. Turning the screen off always locks it.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -202,7 +202,7 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
                 Column(Modifier.weight(1f)) {
                     Text("Intercept all browser downloads", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "Send downloads started in the built-in browser to ADM instead of the system downloader",
+                        "Send downloads started in the built-in browser to LangsungDownload instead of the system downloader",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -231,7 +231,7 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
                 Column(Modifier.weight(1f)) {
                     Text("Refresh expired links automatically", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "When a download fails with HTTP 403 or 410, ADM opens its page in the background and takes over a file of exactly " +
+                        "When a download fails with HTTP 403 or 410, LangsungDownload opens its page in the background and takes over a file of exactly " +
                             "the same size. Not for private downloads, HLS or YouTube.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -276,7 +276,7 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
             if (licensesOpen) LicensesDialog(vm) { licensesOpen = false }
             Spacer(Modifier.height(8.dp))
             Text(
-                "ADM ${BuildConfig.VERSION_NAME}",
+                "LangsungDownload ${BuildConfig.VERSION_NAME}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

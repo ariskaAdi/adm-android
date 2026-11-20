@@ -205,9 +205,9 @@ class FileSaverTreeTest {
         // no takePersistableUriPermission: the access was revoked
         val s = saver()
         val saved = s.save(temp, "kept.bin", null)
-        assertEquals("Saved to Download/ADM: chosen folder unavailable", saved.note)
+        assertEquals("Saved to Download/LangsungDownload: chosen folder unavailable", saved.note)
         assertEquals(1, fallbackCalls)
-        assertTrue("the file is in the default folder: ${saved.location}", saved.location.unix().contains("/Download/ADM/"))
+        assertTrue("the file is in the default folder: ${saved.location}", saved.location.unix().contains("/Download/LangsungDownload/"))
         assertArrayEquals(payload, File(saved.location).readBytes())
         assertFalse(File(card, "kept.bin").exists())
     }
@@ -224,13 +224,13 @@ class FileSaverTreeTest {
         val saved = saver(treeUri = null).save(temp, "plain.bin", null)
         assertNull(saved.note)
         assertEquals(0, fallbackCalls)
-        assertTrue(saved.location.unix().contains("/Download/ADM/"))
+        assertTrue(saved.location.unix().contains("/Download/LangsungDownload/"))
     }
 
     @Test fun sortingAlsoAppliesToTheDefaultFolder() {
         val saved = saver(sort = true, treeUri = null).save(temp, "song.mp3", "audio/mpeg")
-        assertTrue(saved.location, saved.location.unix().contains("/Download/ADM/Audio/song.mp3"))
-        assertEquals("Download/ADM/Audio/song.mp3", saved.displayPath)
+        assertTrue(saved.location, saved.location.unix().contains("/Download/LangsungDownload/Audio/song.mp3"))
+        assertEquals("Download/LangsungDownload/Audio/song.mp3", saved.displayPath)
     }
 
     @Test fun folderNameAndAvailability() {

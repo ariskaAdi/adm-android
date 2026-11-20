@@ -14,7 +14,7 @@ import org.schabi.newpipe.extractor.exceptions.YoutubeMusicPremiumContentExcepti
 import java.io.IOException
 
 enum class YtErrorKind(val message: String) {
-    AGE_RESTRICTED("This video is age-restricted. YouTube only shows it to signed-in accounts, and ADM can't sign in."),
+    AGE_RESTRICTED("This video is age-restricted. YouTube only shows it to signed-in accounts, and LangsungDownload can't sign in."),
     PRIVATE("This video is private."),
     UNAVAILABLE("This video is unavailable. It may have been removed or made private by the uploader."),
     MEMBERS_ONLY("This video is for channel members only."),
@@ -22,7 +22,7 @@ enum class YtErrorKind(val message: String) {
     LIVE("This is a live broadcast (or a premiere that hasn't ended). Live streams aren't supported; try again once it has finished."),
     GEO_BLOCKED("This video isn't available in your country."),
     BOT_CHECK("YouTube asked to confirm you're not a bot. Open YouTube in your browser, finish the check, and try again later."),
-    EXTRACTOR_CHANGED("YouTube changed something; ADM needs an update."),
+    EXTRACTOR_CHANGED("YouTube changed something; LangsungDownload needs an update."),
     NETWORK("Couldn't reach YouTube. Check your connection and try again."),
     FORMAT_GONE("YouTube no longer offers the quality you picked for this video. Add the link again to choose another."),
     TERMINATED("The channel that published this video has been closed."),

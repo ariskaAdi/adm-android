@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLong
  * `adb shell am start -n com.olaph.xdm/.debug.SaveTestActivity`. It
  *
  *  1. saves a small file named like a video through the real saver with "sort by type" on, into the default MediaStore
- *     location, and checks it lands in Download/ADM/Video, reads back byte for byte, and deletes it again;
+ *     location, and checks it lands in Download/LangsungDownload/Video, reads back byte for byte, and deletes it again;
  *  2. runs the schedule decision for a few times of day;
  *  3. reads for two seconds from an in-process source through the speed limiter at 256 KB/s, four connections at once, and
  *     checks the total is about what the cap allows.
@@ -90,7 +90,7 @@ class SaveTestActivity : ComponentActivity() {
             val saved = saver.save(temp, name, "video/mp4")
             location = saved.location
             if (saved.note != null) return@withContext SaveResult("unexpected note: ${saved.note}")
-            val expectedFolder = "Download/ADM/Video"
+            val expectedFolder = "Download/LangsungDownload/Video"
             if (saved.displayPath != "$expectedFolder/${saved.fileName}") {
                 return@withContext SaveResult("display path ${saved.displayPath} is not in $expectedFolder")
             }

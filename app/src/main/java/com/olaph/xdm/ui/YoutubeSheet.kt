@@ -160,7 +160,7 @@ fun YoutubeSheet(
                     }
                     val options = FormatSelector.options(info)
                     if (options.isEmpty()) {
-                        state = YtState.Failed("YouTube didn't offer any format ADM can download for this video.")
+                        state = YtState.Failed("YouTube didn't offer any format LangsungDownload can download for this video.")
                         return@LaunchedEffect
                     }
                     val picked = if (defaultQuality == YoutubeQuality.ASK) null else FormatSelector.pick(info, defaultQuality, options)
