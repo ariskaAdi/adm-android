@@ -593,6 +593,7 @@ class BrowserViewModel(app: Application) : AndroidViewModel(app) {
                 kind = if (option.hls) DownloadKind.HLS else DownloadKind.HTTP,
                 lengthEstimated = option.sizeEstimated,
                 isPrivate = mediaSavePrivate,
+                audioUrl = option.audioUrl.takeIf { option.hls },
             ),
         )
         tab.mediaSheetOpen = false

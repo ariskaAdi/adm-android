@@ -85,6 +85,57 @@ class Mp4DashMuxerTest {
         assertEquals("movie duration", 3.0, mp4.movieDuration.toDouble() / mp4.timescale, 0.2)
     }
 
+    // ---- HLS renditions: the video playlist and its separate audio playlist, as the HLS engine joins them ----
+
+    /** An MPEG-TS / packed-audio fixture of the TS remux tests (scripts/gen-remux-fixtures.sh). */
+    private fun remuxFixture(name: String): File {
+        val f = File(tmp.root, name)
+        checkNotNull(javaClass.getResourceAsStream("/remux/$name")) { "missing fixture $name" }.use { i -> f.outputStream().use { i.copyTo(it) } }
+        return f
+    }
+
+    private fun muxHls(video: String, audio: String): Pair<RemuxResult, Mp4File> {
+        val out = File(tmp.root, "hls-${System.nanoTime()}.mp4")
+        val r = runBlocking {
+            Mp4DashMuxer().mux(
+                DashInput(remuxFixture(video), video.substringAfterLast('.')),
+                DashInput(remuxFixture(audio), audio.substringAfterLast('.')),
+                out,
+            )
+        }
+        return r to Mp4File(out.readBytes())
+    }
+
+    @Test fun tsVideoAndTsAudioRenditionsBecomeOneMp4() {
+        // mp3.ts: 3 s H.264 (75 frames) with an MP3 track of its own; audio.ts: 5 s AAC (217 frames).
+        val (r, mp4) = muxHls("mp3.ts", "audio.ts")
+        assertEquals("mp4", r.extension)
+        assertEquals(75, r.videoOut)
+        assertEquals(217, r.audioOut)
+        assertWellFormed(mp4)
+        assertEquals("exactly one video and one audio track", listOf("soun", "vide"), mp4.traks.map { it.handler }.sorted())
+        assertEquals("avc1", mp4.video().entryType)
+        assertTrue("first video sample is a key frame", mp4.video().isSync(1))
+        val a = mp4.audio()
+        assertEquals("the sound is the audio rendition's AAC, not the MP3 inside the video file", "mp4a", a.entryType)
+        assertEquals(0x40, a.esdsObjectType)
+        assertEquals(217, a.sampleCount)
+        assertEquals("shared PTS clock: both start at 0, the longer audio decides", 5.0, r.durationUs / 1e6, 0.2)
+    }
+
+    @Test fun packedAacAudioIsAlignedToTheStartOfATsVideo() {
+        // av.ts starts at ffmpeg's default PTS of 1.4 s; ADTS audio has no timestamps (starts at 0). Lined up on one
+        // clock the file would last ~6.4 s with 1.4 s of silence; each starting at 0 it lasts 5 s.
+        val (r, mp4) = muxHls("av.ts", "audio.aac")
+        assertEquals(125, r.videoOut)
+        assertEquals(217, r.audioOut)
+        assertWellFormed(mp4)
+        assertEquals(listOf("soun", "vide"), mp4.traks.map { it.handler }.sorted())
+        assertEquals(5.0, r.durationUs / 1e6, 0.2)
+        assertEquals(5.0, mp4.movieDuration.toDouble() / mp4.timescale, 0.2)
+        assertEquals(5.0, mp4.audio().durationSeconds, 0.2)
+    }
+
     @Test fun samplesOfBothTracksAreInterleaved() {
         val (_, mp4) = mux("video-avc.mp4", "audio-aac.m4a")
         val firstAudio = mp4.audio().sampleOffsets().min()

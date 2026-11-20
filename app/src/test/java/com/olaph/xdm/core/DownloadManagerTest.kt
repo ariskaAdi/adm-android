@@ -12,6 +12,8 @@ import com.olaph.xdm.engine.DownloadEngineSplitTest
 import com.olaph.xdm.engine.DownloadEngineTest
 import com.olaph.xdm.engine.FilenameUtils
 import com.olaph.xdm.engine.HeaderCodec
+import com.olaph.xdm.remux.DashInput
+import com.olaph.xdm.remux.DashMuxer
 import com.olaph.xdm.remux.RemuxException
 import com.olaph.xdm.remux.RemuxResult
 import com.olaph.xdm.remux.Remuxer
@@ -172,6 +174,22 @@ class DownloadManagerTest {
         }
     }
 
+    /** Stands in for [com.olaph.xdm.remux.Mp4DashMuxer] (tested with real media in Mp4DashMuxerTest). */
+    private class FakeDashMuxer : DashMuxer {
+        @Volatile var fail = false
+        /** (container, bytes) of the video and of the audio of every call. */
+        val calls = CopyOnWriteArrayList<Pair<Pair<String, ByteArray>?, Pair<String, ByteArray>?>>()
+
+        override suspend fun mux(video: DashInput?, audio: DashInput?, output: File, onProgress: (Long, Long) -> Unit): RemuxResult {
+            calls += video?.let { it.container to it.file.readBytes() } to audio?.let { it.container to it.file.readBytes() }
+            if (fail) throw RemuxException("unsupported audio codec (audio/opus)")
+            onProgress(0, 100)
+            output.writeBytes("MUX:".toByteArray() + (video?.file?.readBytes() ?: ByteArray(0)) + (audio?.file?.readBytes() ?: ByteArray(0)))
+            onProgress(100, 100)
+            return RemuxResult("mp4", "video/mp4", 1_000_000, 10, 10, 20, 20, 0)
+        }
+    }
+
     internal class FakeFiles(private val dir: File) : FileStore {
         val saved = CopyOnWriteArrayList<File>()
         val mimes = CopyOnWriteArrayList<String?>()
@@ -224,6 +242,7 @@ class DownloadManagerTest {
     private lateinit var manager: DownloadManager
     private lateinit var tempDir: File
     private val remuxer = FakeRemuxer()
+    private val dashMuxer = FakeDashMuxer()
     @Volatile private var freeBytes = Long.MAX_VALUE
 
     @Before fun setUp() {
@@ -241,7 +260,7 @@ class DownloadManagerTest {
             scope, dao, settings,
             DownloadEngine(OkHttpClient(), backoffMs = { 1 }, tickMs = 20, persistIntervalMs = 40),
             files, tempDir, network, notifier,
-            remuxer = remuxer, freeSpace = { freeBytes },
+            remuxer = remuxer, freeSpace = { freeBytes }, dashMuxer = dashMuxer,
         )
     }
 
@@ -622,8 +641,10 @@ class DownloadManagerTest {
 
     // ---- HLS through the manager ----
 
-    private class HlsServer(count: Int) {
+    private class HlsServer(count: Int, audioCount: Int = 0) {
         val segments = (0 until count).map { i -> ByteArray(40_000 + i).also { Random(900L + i).nextBytes(it) } }
+        /** The separate audio playlist /a.m3u8 (segments /aN.ts). */
+        val audioSegments = (0 until audioCount).map { i -> ByteArray(9_000 + i).also { Random(700L + i).nextBytes(it) } }
         @Volatile var segmentDelayMs = 0L
         /** Segments with index >= stallFrom are served very slowly (deterministic pause point). */
         @Volatile var stallFrom = Int.MAX_VALUE
@@ -641,6 +662,17 @@ class DownloadManagerTest {
                             append("#EXT-X-ENDLIST\n")
                         }
                         return okhttp3.mockwebserver.MockResponse().setBody(pl)
+                    }
+                    if (path == "/a.m3u8" && audioSegments.isNotEmpty()) {
+                        val pl = buildString {
+                            append("#EXTM3U\n#EXT-X-TARGETDURATION:4\n")
+                            audioSegments.indices.forEach { append("#EXTINF:4,\na$it.ts\n") }
+                            append("#EXT-X-ENDLIST\n")
+                        }
+                        return okhttp3.mockwebserver.MockResponse().setBody(pl)
+                    }
+                    Regex("/a(\\d+)\\.ts").matchEntire(path)?.groupValues?.get(1)?.toInt()?.let { a ->
+                        return okhttp3.mockwebserver.MockResponse().setBody(okio.Buffer().write(audioSegments[a]))
                     }
                     val i = Regex("/s(\\d+)\\.ts").matchEntire(path)?.groupValues?.get(1)?.toInt()
                         ?: return okhttp3.mockwebserver.MockResponse().setResponseCode(404)
@@ -670,6 +702,73 @@ class DownloadManagerTest {
             assertEquals(expected.size.toLong(), d.totalBytes)
             waitUntil("segments dir removed") { !manager.hlsDir(id).exists() && !manager.tempFile(id).exists() }
             assertEquals(listOf(id), notifier.completed.toList())
+        } finally {
+            hls.server.shutdown()
+        }
+    }
+
+    @Test fun hlsVideoWithSeparateAudioIsMergedIntoOneMp4() = runBlocking {
+        val hls = HlsServer(6, audioCount = 4)
+        try {
+            val id = manager.add(
+                hls.server.url("/v.m3u8").toString(), "My video.mp4", 3, startNow = true,
+                headers = mapOf("Cookie" to "sid=1"), kind = com.olaph.xdm.data.DownloadKind.HLS,
+                hlsAudioUrl = hls.server.url("/a.m3u8").toString(),
+            )
+            waitUntil("completed") { status(id) == DownloadStatus.COMPLETED }
+
+            val d = dao.find(id)!!
+            assertNull("no note on success", d.error)
+            assertEquals("My video.mp4", d.fileName)
+            assertEquals("video and audio segments both count", 10, d.segmentsTotal)
+            val (video, audio) = dashMuxer.calls.single()
+            assertEquals("ts", video!!.first)
+            assertEquals("ts", audio!!.first)
+            assertEquals("the muxer got the joined video", sha(joined(hls)), sha(video.second))
+            assertEquals("and the joined audio", sha(hls.audioSegments.fold(ByteArray(0)) { a, b -> a + b }), sha(audio.second))
+            assertEquals("merged, so no separate .ts conversion", 0, remuxer.calls.get())
+            val saved = files.saved.single()
+            assertEquals("MUX:", saved.readBytes().copyOf(4).decodeToString())
+            assertEquals(listOf("video/mp4"), files.mimes.toList())
+            // The server refuses requests without the cookie, so every audio segment arriving means the headers went along.
+            assertEquals(4, (0 until 4).count { (hls.hits["/a$it.ts"]?.get() ?: 0) > 0 })
+            waitUntil("temp files removed") {
+                !manager.hlsDir(id).exists() && !manager.hlsAudioDir(id).exists() && !manager.hlsAudioFile(id).exists() &&
+                    !manager.tempFile(id).exists() && !manager.convertedFile(id).exists()
+            }
+        } finally {
+            hls.server.shutdown()
+        }
+    }
+
+    @Test fun whenTheAudioCannotBeMergedTheVideoIsKeptWithANote() = runBlocking {
+        dashMuxer.fail = true
+        val hls = HlsServer(5, audioCount = 3)
+        try {
+            val id = manager.add(
+                hls.server.url("/v.m3u8").toString(), "Clip.mp4", 3, startNow = true,
+                headers = mapOf("Cookie" to "sid=1"), kind = com.olaph.xdm.data.DownloadKind.HLS,
+                hlsAudioUrl = hls.server.url("/a.m3u8").toString(),
+            )
+            waitUntil("completed") { status(id) == DownloadStatus.COMPLETED }
+
+            val d = dao.find(id)!!
+            assertEquals("Clip.ts", d.fileName)
+            assertTrue(d.error, d.error!!.startsWith("Saved without sound (merging failed: unsupported audio codec"))
+            assertEquals("the video on its own", sha(joined(hls)), sha(files.saved.single().readBytes()))
+            waitUntil("temp files removed") { !manager.hlsAudioDir(id).exists() && !manager.hlsAudioFile(id).exists() }
+        } finally {
+            hls.server.shutdown()
+        }
+    }
+
+    @Test fun anHlsLinkWithoutSeparateAudioNeverCallsTheMuxer() = runBlocking {
+        val hls = HlsServer(3)
+        try {
+            val id = addHls(hls)
+            waitUntil("completed") { status(id) == DownloadStatus.COMPLETED }
+            assertNull(dao.find(id)!!.extra)
+            assertTrue(dashMuxer.calls.isEmpty())
         } finally {
             hls.server.shutdown()
         }

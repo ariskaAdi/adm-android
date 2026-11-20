@@ -28,6 +28,7 @@ import com.olaph.xdm.engine.SpeedMeter
 import com.olaph.xdm.engine.UrlUtils
 import com.olaph.xdm.remux.RemuxResult
 import com.olaph.xdm.remux.Remuxer
+import com.olaph.xdm.remux.DashInput
 import com.olaph.xdm.remux.DashMuxer
 import com.olaph.xdm.remux.Mp4DashMuxer
 import com.olaph.xdm.remux.TsMp4Remuxer
@@ -220,12 +221,18 @@ class DownloadManager(
     /** The MP4 being written from the concatenated .ts; only exists during (and right after) a conversion. */
     fun convertedFile(id: Long) = File(tempDir, "$id.mp4.part")
 
+    /** HLS with a separate audio playlist: its finished segments (resume state), and the joined audio stream. */
+    fun hlsAudioDir(id: Long) = File(tempDir, "hls-$id-audio")
+    fun hlsAudioFile(id: Long) = File(tempDir, "$id.audio.part")
+
     private val youtubeJob: YoutubeJob? = youtube?.let { YoutubeJob(engine, dao, it, dashMuxer, tempDir, freeSpace, youtubeRetryDelayMs, youtubeChunkBytes) }
 
     private fun deleteTemp(id: Long) {
         tempFile(id).delete()
         convertedFile(id).delete()
         hlsDir(id).deleteRecursively()
+        hlsAudioDir(id).deleteRecursively()
+        hlsAudioFile(id).delete()
         File(tempDir, "yt-$id").deleteRecursively()
     }
 
@@ -297,6 +304,8 @@ class DownloadManager(
         isPrivate: Boolean = false,
         /** The page the link was captured on; without one, a Referer header (if any) stands in. */
         sourcePage: String? = null,
+        /** HLS only: a separate audio playlist to download with the video and merge into it. */
+        hlsAudioUrl: String? = null,
     ): Long {
         val name = FilenameUtils.sanitize(fileName.ifBlank { FilenameUtils.resolve(null, url, probe?.mimeType) })
         val page = (sourcePage ?: headers.entries.firstOrNull { it.key.equals("Referer", ignoreCase = true) }?.value)
@@ -318,6 +327,7 @@ class DownloadManager(
                     kind = kind,
                     isPrivate = isPrivate,
                     sourcePage = page,
+                    extra = if (kind == DownloadKind.HLS) HlsAudioExtra.encode(hlsAudioUrl) else null,
                 ),
             )
             pumpLocked()
@@ -869,15 +879,14 @@ class DownloadManager(
     /** What the HLS engine produced, remembered in [ASSEMBLED] so a resumed download does not fetch or join anything twice. */
     private class Assembled(val bytes: Long, val extension: String, val mimeType: String, val segments: Int)
 
-    private fun readAssembled(id: Long, temp: File): Assembled? = runCatching {
-        val props = java.util.Properties().apply { File(hlsDir(id), ASSEMBLED).inputStream().use { load(it) } }
+    private fun readAssembled(dir: File, temp: File): Assembled? = runCatching {
+        val props = java.util.Properties().apply { File(dir, ASSEMBLED).inputStream().use { load(it) } }
         Assembled(
             props.getProperty("bytes").toLong(), props.getProperty("extension"), props.getProperty("mime"), props.getProperty("segments").toInt(),
         ).takeIf { temp.isFile && temp.length() == it.bytes }
     }.getOrNull()
 
-    private fun writeAssembled(id: Long, a: Assembled) {
-        val dir = hlsDir(id)
+    private fun writeAssembled(dir: File, a: Assembled) {
         val props = java.util.Properties().apply {
             setProperty("bytes", a.bytes.toString()); setProperty("extension", a.extension)
             setProperty("mime", a.mimeType); setProperty("segments", a.segments.toString())
@@ -894,29 +903,17 @@ class DownloadManager(
      */
     private suspend fun runHls(d: DownloadEntity, s: AppSettings, temp: File): Finished {
         val id = d.id
-        var assembled = withContext(Dispatchers.IO) { readAssembled(id, temp) }
-        if (assembled == null) {
-            var lastPersist = 0L
-            val result = hlsEngine.download(
-                HlsRequest(
-                    id = id,
-                    playlistUrl = d.url,
-                    userAgent = s.userAgent,
-                    workDir = hlsDir(id),
-                    output = temp,
-                    concurrency = d.connections,
-                    headers = HeaderCodec.decode(d.headers),
-                ),
-            ) { p ->
-                publishHls(id, p)
-                val now = clock()
-                if (now - lastPersist >= HLS_PERSIST_MS || p.segmentsDone == p.segmentsTotal) {
-                    lastPersist = now
-                    dao.setHlsProgress(id, p.segmentsDone, p.segmentsTotal, p.bytes)
-                }
+        val assembled = fetchHls(d, s, d.url, hlsDir(id), temp)
+
+        // A quality whose sound is in a separate playlist: fetch that too and merge the two into one MP4.
+        var mergeNote: String? = null
+        HlsAudioExtra.audioUrl(d.extra)?.let { audioUrl ->
+            val audioTemp = hlsAudioFile(id).also { it.parentFile?.mkdirs() }
+            val audio = fetchHls(d, s, audioUrl, hlsAudioDir(id), audioTemp, after = assembled, statusText = "Downloading audio")
+            when (val merged = mergeAudio(d, temp, assembled, audioTemp, audio)) {
+                is AudioMerge.Done -> return merged.finished
+                is AudioMerge.Failed -> mergeNote = merged.note
             }
-            assembled = Assembled(result.totalBytes, result.extension, result.mimeType, result.segments)
-            withContext(Dispatchers.IO) { writeAssembled(id, assembled) }
         }
 
         if (assembled.extension == "ts" && s.convertHlsToMp4) {
@@ -924,14 +921,98 @@ class DownloadManager(
             if (converted.file != null) {
                 val r = converted.result!!
                 return Finished(
-                    converted.file.length(), r.mimeType, withStreamExtension(d.fileName, r.extension), assembled.segments, converted.file,
+                    converted.file.length(), r.mimeType, withStreamExtension(d.fileName, r.extension), assembled.segments, converted.file, mergeNote,
                 )
             }
             return Finished(
-                assembled.bytes, assembled.mimeType, withStreamExtension(d.fileName, assembled.extension), assembled.segments, temp, converted.note,
+                assembled.bytes, assembled.mimeType, withStreamExtension(d.fileName, assembled.extension), assembled.segments, temp,
+                listOfNotNull(mergeNote, converted.note).joinToString("; ").ifEmpty { null },
             )
         }
-        return Finished(assembled.bytes, assembled.mimeType, withStreamExtension(d.fileName, assembled.extension), assembled.segments, temp)
+        return Finished(assembled.bytes, assembled.mimeType, withStreamExtension(d.fileName, assembled.extension), assembled.segments, temp, mergeNote)
+    }
+
+    /**
+     * Downloads one playlist's segments into [workDir] and joins them into [out], or returns what an earlier run already
+     * joined. [after] is the part fetched before this one (the video, when this is its audio): progress continues from
+     * its segments and bytes instead of starting over.
+     */
+    private suspend fun fetchHls(
+        d: DownloadEntity,
+        s: AppSettings,
+        playlistUrl: String,
+        workDir: File,
+        out: File,
+        after: Assembled? = null,
+        statusText: String? = null,
+    ): Assembled {
+        val id = d.id
+        withContext(Dispatchers.IO) { readAssembled(workDir, out) }?.let { return it }
+        val segOffset = after?.segments ?: 0
+        val byteOffset = after?.bytes ?: 0L
+        var lastPersist = 0L
+        val result = hlsEngine.download(
+            HlsRequest(
+                id = id,
+                playlistUrl = playlistUrl,
+                userAgent = s.userAgent,
+                workDir = workDir,
+                output = out,
+                concurrency = d.connections,
+                headers = HeaderCodec.decode(d.headers),
+            ),
+        ) { raw ->
+            val p = if (after == null) raw else HlsProgress(
+                raw.segmentsDone + segOffset,
+                raw.segmentsTotal + segOffset,
+                raw.bytes + byteOffset,
+                if (raw.estimatedTotalBytes > 0) raw.estimatedTotalBytes + byteOffset else -1,
+            )
+            publishHls(id, p, statusText)
+            val now = clock()
+            if (now - lastPersist >= HLS_PERSIST_MS || raw.segmentsDone == raw.segmentsTotal) {
+                lastPersist = now
+                dao.setHlsProgress(id, p.segmentsDone, p.segmentsTotal, p.bytes)
+            }
+        }
+        val assembled = Assembled(result.totalBytes, result.extension, result.mimeType, result.segments)
+        withContext(Dispatchers.IO) { writeAssembled(workDir, assembled) }
+        return assembled
+    }
+
+    private sealed interface AudioMerge {
+        class Done(val finished: Finished) : AudioMerge
+        class Failed(val note: String) : AudioMerge
+    }
+
+    /**
+     * Merges the video and its separate audio into one MP4 (samples copied, nothing re-encoded). Never fails the
+     * download: if they can't be merged, the caller keeps the video on its own and shows [AudioMerge.Failed.note].
+     */
+    private suspend fun mergeAudio(d: DownloadEntity, video: File, v: Assembled, audio: File, a: Assembled): AudioMerge {
+        val id = d.id
+        val out = convertedFile(id)
+        val need = video.length() + audio.length()
+        if (freeSpace(tempDir) < need) {
+            return AudioMerge.Failed("Saved without sound (not enough free space to add it: ${Formatters.bytes(need)} needed)")
+        }
+        val segments = v.segments + a.segments
+        val label = "Merging video and audio…"
+        _live.update { it + (id to LiveProgress(0, need, 0, -1, segments, segments, convertPercent = 0, convertLabel = label)) }
+        try {
+            val r = dashMuxer.mux(DashInput(video, v.extension), DashInput(audio, a.extension), out) { done, total ->
+                val pct = if (total > 0) (done * 100 / total).toInt().coerceIn(0, 100) else 0
+                _live.update { it + (id to LiveProgress(done, total, 0, -1, segments, segments, convertPercent = pct, convertLabel = label)) }
+            }
+            return AudioMerge.Done(Finished(out.length(), r.mimeType, withStreamExtension(d.fileName, r.extension), segments, out))
+        } catch (e: CancellationException) {
+            withContext(NonCancellable) { out.delete() }
+            throw e
+        } catch (e: Exception) {
+            out.delete()
+            val why = e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName
+            return AudioMerge.Failed("Saved without sound (merging failed: $why)")
+        }
     }
 
     private class Conversion(val file: File?, val result: RemuxResult?, val note: String?)
@@ -971,13 +1052,13 @@ class DownloadManager(
         return if (cur.isEmpty() || cur in STREAM_EXTENSIONS) "$base.$ext" else name
     }
 
-    private fun publishHls(id: Long, p: HlsProgress) {
+    private fun publishHls(id: Long, p: HlsProgress, statusText: String? = null) {
         val meter = meters[id] ?: return
         meter.add(clock(), p.bytes)
         val speed = meter.bytesPerSecond()
         val est = p.estimatedTotalBytes
         val eta = if (est > 0) SpeedMeter.etaSeconds((est - p.bytes).coerceAtLeast(0), speed) else -1
-        _live.update { it + (id to LiveProgress(p.bytes, est, speed, eta, p.segmentsDone, p.segmentsTotal)) }
+        _live.update { it + (id to LiveProgress(p.bytes, est, speed, eta, p.segmentsDone, p.segmentsTotal, statusText = statusText)) }
     }
 
     private suspend fun onStopped(id: Long, reason: StopReason?) {

@@ -20,4 +20,6 @@ data class PendingDownload(
     val lengthEstimated: Boolean = false,
     /** Chosen in the browser's video sheet; null = the add sheet uses the default from Settings. */
     val isPrivate: Boolean? = null,
+    /** HLS only: the separate audio playlist of the chosen quality, merged with the video when both are done. */
+    val audioUrl: String? = null,
 )

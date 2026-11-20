@@ -4,7 +4,7 @@
 #   scripts/gen-remux-fixtures.sh /path/to/ffmpeg /path/to/output-dir
 # Expected ffprobe packet counts (video/audio) are hard-coded in the tests:
 #   av.ts, wrap.ts, hls-seg0-2.ts (together), hevc.ts: 125/217   disc-a.ts + disc-b.ts: 75/131 + 50/88
-#   audio.ts: 217 audio   mp3.ts: 75/116   aac-ac3.ts: 50 video, 95 AAC, 63 AC-3
+#   audio.ts, audio.aac: 217 audio   mp3.ts: 75/116   aac-ac3.ts: 50 video, 95 AAC, 63 AC-3
 set -euo pipefail
 FFMPEG=${1:?ffmpeg binary}
 OUT=${2:?output dir}
@@ -36,6 +36,9 @@ rm hls-index.m3u8
 
 # (5) audio only, AAC in ADTS inside TS
 "$FFMPEG" "${q[@]}" -f lavfi -i "sine=frequency=330:sample_rate=44100:duration=5" -ac 2 -c:a aac -b:a 48k -f mpegts audio.ts
+
+# (5b) the same audio as packed ADTS (an HLS audio rendition without TS): Mp4DashMuxerTest merges it with av.ts
+"$FFMPEG" "${q[@]}" -f lavfi -i "sine=frequency=330:sample_rate=44100:duration=5" -ac 2 -c:a aac -b:a 48k -f adts audio.aac
 
 # (6) H.265 + AAC
 "$FFMPEG" "${q[@]}" "${V5[@]}" "${A5[@]}" -c:v libx265 -preset veryfast -g 25 -b:v 120k -pix_fmt yuv420p \

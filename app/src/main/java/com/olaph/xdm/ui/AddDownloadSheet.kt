@@ -144,6 +144,8 @@ fun AddDownloadSheet(
             trimmed, name, connections, startNow, result, headers,
             kind = if (hls) DownloadKind.HLS else DownloadKind.HTTP,
             isPrivate = savePrivate && privateAvailable,
+            // The audio belongs to the quality picked in the browser; an edited link drops it.
+            hlsAudioUrl = prefill?.audioUrl?.takeIf { hls && trimmed == prefill.url },
         )
         onAdded()
     }

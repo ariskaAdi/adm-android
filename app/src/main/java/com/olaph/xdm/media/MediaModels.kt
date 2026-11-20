@@ -22,6 +22,11 @@ data class MediaOption(
     val hls: Boolean = false,
     val audioOnly: Boolean = false,
     val videoOnly: Boolean = false,
+    /**
+     * HLS only: the audio playlist that belongs to this video-only quality (its `AUDIO` group). It is downloaded
+     * along with the video and the two are merged into one MP4.
+     */
+    val audioUrl: String? = null,
     /** Non-null = shown but not selectable ("Live stream — not supported"). */
     val unsupportedReason: String? = null,
 ) {

@@ -8,6 +8,7 @@ import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.ParserException
 import androidx.media3.common.util.ParsableByteArray
+import androidx.media3.common.util.TimestampAdjuster
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.extractor.DefaultExtractorInput
 import androidx.media3.extractor.Extractor
@@ -16,8 +17,12 @@ import androidx.media3.extractor.PositionHolder
 import androidx.media3.extractor.SeekMap
 import androidx.media3.extractor.TrackOutput
 import androidx.media3.extractor.mkv.MatroskaExtractor
+import androidx.media3.extractor.mp3.Mp3Extractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.text.SubtitleParser
+import androidx.media3.extractor.ts.AdtsExtractor
+import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory
+import androidx.media3.extractor.ts.TsExtractor
 import androidx.media3.muxer.BufferInfo
 import androidx.media3.muxer.Mp4Muxer
 import androidx.media3.muxer.MuxerException
@@ -34,8 +39,23 @@ import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.util.ArrayDeque
 
-/** One downloaded elementary stream: a fragmented MP4 (`mp4`, `m4a`) or a WebM file as YouTube serves them. */
-class DashInput(val file: File, val container: String)
+/**
+ * One downloaded stream: a fragmented MP4 (`mp4`, `m4a`) or a WebM file as YouTube serves them, or what an HLS
+ * rendition assembles to: MPEG-TS (`ts`) or packed audio (`aac`, `mp3`). Only the track of the kind it is passed as
+ * (video or audio) is taken from it, so a video file that carries a sound track of its own does not add a second one.
+ */
+class DashInput(val file: File, val container: String) {
+    /**
+     * Inputs on the same clock keep their offset to each other. Fragmented MP4s share one (the `tfdt` times), MPEG-TS
+     * files share one (the 90 kHz PTS), but packed audio has no timestamps of its own (they start at 0) and the two
+     * families can't be lined up reliably, so in a mixed pair each input starts at 0.
+     */
+    internal val clock: String get() = when (container) {
+        "ts" -> "pts"
+        "aac", "mp3" -> "own"
+        else -> "mp4"
+    }
+}
 
 /** Merges the video-only and audio-only files of a DASH download into one ordinary file. */
 interface DashMuxer {
@@ -52,7 +72,10 @@ interface DashMuxer {
  * The two files are read in step (always the sample with the earlier timestamp next), so audio and video end up
  * interleaved and the player does not have to seek back and forth.
  *
- * H.264, H.265 and AV1 video and AAC audio are copied; anything else (VP9, Opus, ...) is rejected with a message.
+ * HLS video-only and audio-only renditions go through here too: [TsExtractor] / [AdtsExtractor] / [Mp3Extractor] read
+ * those. Discontinuities inside an MPEG-TS input are not stitched (the single-file [TsMp4Remuxer] does that).
+ *
+ * H.264, H.265 and AV1 video and AAC or MP3 audio are copied; anything else (VP9, Opus, ...) is rejected with a message.
  * (VP9 was tried: [Mp4Muxer] insists on a `vpcC` configuration record that the WebM files YouTube serves do not carry.)
  */
 @OptIn(UnstableApi::class)
@@ -93,7 +116,8 @@ class Mp4DashMuxer : DashMuxer {
 
     /** The single audio or video stream of one file. Other track types (subtitles, metadata) are swallowed. */
     private class Track(val type: Int, val owner: Source) : TrackOutput {
-        val wanted = type == C.TRACK_TYPE_VIDEO || type == C.TRACK_TYPE_AUDIO
+        // Only the kind this file was passed for: the video file of an HLS rendition may carry a sound track as well.
+        val wanted = type == owner.kind
         var format: Format? = null
         var muxerTrackId = -1
         var samplesIn = 0
@@ -159,10 +183,47 @@ class Mp4DashMuxer : DashMuxer {
         val tracks = ArrayList<Track>()
         private val raf = RandomAccessFile(input.file, "r")
         private val reader = BufferedFile(raf)
-        private val extractor: Extractor = if (input.container == "webm") {
-            MatroskaExtractor(SubtitleParser.Factory.UNSUPPORTED, 0)
-        } else {
-            FragmentedMp4Extractor(SubtitleParser.Factory.UNSUPPORTED, 0)
+        private val extractor: Extractor = when (input.container) {
+            "webm" -> MatroskaExtractor(SubtitleParser.Factory.UNSUPPORTED, 0)
+            "ts" -> TsExtractor(
+                TsExtractor.MODE_HLS,
+                TsExtractor.FLAG_EMIT_RAW_SUBTITLE_DATA,
+                SubtitleParser.Factory.UNSUPPORTED,
+                // Raw PTS (wrap handled), so a video and an audio TS of the same stream keep their offset.
+                TimestampAdjuster(TimestampAdjuster.MODE_NO_OFFSET),
+                // As in TsMp4Remuxer: HLS has an AUD in every AVC access unit, slice-based splitting would cut frames.
+                DefaultTsPayloadReaderFactory(DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES),
+                TsExtractor.DEFAULT_TIMESTAMP_SEARCH_BYTES,
+            )
+            "aac" -> AdtsExtractor()
+            "mp3" -> Mp3Extractor()
+            else -> FragmentedMp4Extractor(SubtitleParser.Factory.UNSUPPORTED, 0)
+        }
+
+        /** Timestamp that becomes 0 in the output; set once the first samples are known. */
+        var origin = 0L
+
+        init {
+            // media3's TS reader holds back the last video frame until it sees the next one: give it a delimiter packet
+            // after the end of the file, as TsMp4Remuxer does (see TsTrailer).
+            if (input.container == "ts" && kind == C.TRACK_TYPE_VIDEO) {
+                val head = ByteArray(188 * 64)
+                val n = RandomAccessFile(input.file, "r").use { f ->
+                    var got = 0
+                    while (got < head.size) {
+                        val r = f.read(head, got, head.size - got)
+                        if (r < 0) break
+                        got += r
+                    }
+                    got
+                }
+                TsTrailer.inspect(head, n)?.let { h ->
+                    reader.trailer = {
+                        val hevc = tracks.firstOrNull { it.type == C.TRACK_TYPE_VIDEO }?.format?.sampleMimeType == MimeTypes.VIDEO_H265
+                        TsTrailer.build(h, input.file.length(), hevc)
+                    }
+                }
+            }
         }
         private var extractorInput = reader.open(0)
         private val position = PositionHolder()
@@ -205,13 +266,29 @@ class Mp4DashMuxer : DashMuxer {
         var position = 0L
             private set
 
+        /** Bytes served after the end of the file (built when first reached); the input length is then unknown. */
+        var trailer: (() -> ByteArray)? = null
+        private var trailerBytes: ByteArray? = null
+
         fun open(at: Long): DefaultExtractorInput {
             position = at
-            return DefaultExtractorInput({ buffer, offset, length -> read(buffer, offset, length) }, at, raf.length())
+            val length = if (trailer != null) C.LENGTH_UNSET.toLong() else raf.length()
+            return DefaultExtractorInput({ buffer, offset, length -> read(buffer, offset, length) }, at, length)
         }
 
         private fun read(out: ByteArray, offset: Int, length: Int): Int {
             if (length == 0) return 0
+            val fileLength = raf.length()
+            val makeTrailer = trailer
+            if (makeTrailer != null && position >= fileLength) {
+                val t = trailerBytes ?: makeTrailer().also { trailerBytes = it }
+                val from = (position - fileLength).toInt()
+                if (from >= t.size) return C.RESULT_END_OF_INPUT
+                val n = minOf(length, t.size - from)
+                System.arraycopy(t, from, out, offset, n)
+                position += n
+                return n
+            }
             if (position < bufStart || position >= bufStart + bufLen) {
                 raf.seek(position)
                 val n = raf.read(buf, 0, buf.size)
@@ -254,8 +331,16 @@ class Mp4DashMuxer : DashMuxer {
             if (a != null && firstA == null) throw RemuxException("no audio found in the downloaded file")
             validate(firstV?.track)
             validate(firstA?.track)
-            // Time 0 is the earliest first sample; the offset between audio and video stays as it is.
-            val origin = listOfNotNull(firstV?.timeUs, firstA?.timeUs).min()
+            // On a shared clock, time 0 is the earliest first sample and the offset between audio and video stays as it
+            // is; otherwise (see DashInput.clock) each input starts at 0.
+            if (v != null && a != null && v.input.clock == a.input.clock && v.input.clock != "own") {
+                val origin = minOf(firstV!!.timeUs, firstA!!.timeUs)
+                v.origin = origin
+                a.origin = origin
+            } else {
+                firstV?.let { v.origin = it.timeUs }
+                firstA?.let { a.origin = it.timeUs }
+            }
 
             val m = Mp4Muxer.Builder(FileOutputStream(output))
                 .setSampleBatchingEnabled(true)
@@ -275,13 +360,13 @@ class Mp4DashMuxer : DashMuxer {
                     pv == null && pa == null -> break
                     pv == null -> a!!
                     pa == null -> v!!
-                    pv.timeUs <= pa.timeUs -> v!!
+                    pv.timeUs - v!!.origin <= pa.timeUs - a!!.origin -> v
                     else -> a!!
                 }
                 val s = from.poll()
                 val t = s.track
                 if (t.muxerTrackId < 0) t.muxerTrackId = m.addTrack(if (t.type == C.TRACK_TYPE_VIDEO) 1 else 2, muxerFormat(t))
-                val rel = (s.timeUs - origin).coerceAtLeast(0)
+                val rel = (s.timeUs - from.origin).coerceAtLeast(0)
                 val info = BufferInfo(rel, s.data.size, if (s.flags and C.BUFFER_FLAG_KEY_FRAME != 0) C.BUFFER_FLAG_KEY_FRAME else 0)
                 m.writeSampleData(t.muxerTrackId, ByteBuffer.wrap(s.data), info)
                 t.samplesOut++
@@ -321,7 +406,7 @@ class Mp4DashMuxer : DashMuxer {
                 // VP9 (always WebM on YouTube) would need a vpcC record that Matroska files from YouTube do not carry.
                 mime == MimeTypes.VIDEO_H264 || mime == MimeTypes.VIDEO_H265 || mime == MimeTypes.VIDEO_AV1
             } else {
-                mime == MimeTypes.AUDIO_AAC
+                mime == MimeTypes.AUDIO_AAC || mime == MimeTypes.AUDIO_MPEG
             }
             if (!ok) throw RemuxException("unsupported ${if (t.type == C.TRACK_TYPE_VIDEO) "video" else "audio"} codec ($mime)")
         }

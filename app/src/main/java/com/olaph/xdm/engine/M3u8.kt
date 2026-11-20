@@ -114,6 +114,16 @@ class MasterPlaylist(
         return AUDIO_CODECS.any { codecs.contains(it) }
     }
 
+    /**
+     * The separate audio playlist that goes with [v]: from its `AUDIO` group, the `DEFAULT=YES` rendition, otherwise
+     * the first one. Null when the variant names no group or the group has no playlist of its own.
+     */
+    fun audioFor(v: HlsVariant): String? {
+        val group = v.audioGroup ?: return null
+        val inGroup = renditions.filter { it.type == "AUDIO" && it.groupId == group && !it.uri.isNullOrBlank() }
+        return (inGroup.firstOrNull { it.isDefault } ?: inGroup.firstOrNull())?.uri
+    }
+
     fun isAudioOnly(v: HlsVariant): Boolean {
         val codecs = v.codecs?.lowercase() ?: return false
         return v.height <= 0 && AUDIO_CODECS.any { codecs.contains(it) } && !VIDEO_CODECS.any { codecs.contains(it) }

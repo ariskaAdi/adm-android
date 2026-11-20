@@ -39,12 +39,13 @@ class HlsOptionsTest {
 
     @Test fun masterOptionsAreSortedAndLabelled() {
         val opts = HlsOptions.forMaster(sampleMaster, vod)
-        // 1080 (video only), 720, 360, then the audio-only variant, then the two audio renditions
+        // 1080 (sound in a separate playlist), 720, 360, then the audio-only variant, then the two audio renditions
         assertEquals(listOf("1080p", "720p60", "360p", "Audio", "Audio · English", "Audio · Deutsch"), opts.map { it.label })
 
         val p1080 = opts[0]
-        assertTrue(p1080.videoOnly)
-        assertTrue("detail mentions video only", p1080.detail!!.contains("video only"))
+        assertFalse("its audio comes along, so it is not video only", p1080.videoOnly)
+        assertEquals("first rendition of its group (none is DEFAULT)", "https://cdn.example.com/v/audio/en.m3u8", p1080.audioUrl)
+        assertTrue("detail says video + audio", p1080.detail!!.contains("video + audio"))
         assertTrue(p1080.detail!!.contains("H.265"))
         assertTrue(p1080.detail!!.contains("6.0 Mbps"))
 
@@ -57,6 +58,40 @@ class HlsOptionsTest {
         assertTrue(opts[4].audioOnly)
         assertTrue(opts.all { it.hls })
         assertEquals("https://cdn.example.com/v/audio/en.m3u8", opts[4].url)
+    }
+
+    @Test fun separateAudioIsPairedWithTheDefaultRenditionOfItsGroup() {
+        val m = master(
+            """
+            #EXTM3U
+            #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="lo",NAME="Low",URI="audio/lo.m3u8"
+            #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="hi",NAME="Commentary",URI="audio/comm.m3u8"
+            #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="hi",NAME="Main",DEFAULT=YES,URI="audio/main.m3u8"
+            #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="muxed",NAME="In stream",DEFAULT=YES
+            #EXT-X-STREAM-INF:BANDWIDTH=4000000,RESOLUTION=1920x1080,CODECS="avc1.640028,mp4a.40.2",AUDIO="hi"
+            1080.m3u8
+            #EXT-X-STREAM-INF:BANDWIDTH=900000,RESOLUTION=640x360,CODECS="avc1.4d401e,mp4a.40.2",AUDIO="lo"
+            360.m3u8
+            #EXT-X-STREAM-INF:BANDWIDTH=500000,RESOLUTION=480x270,CODECS="avc1.4d401e,mp4a.40.2",AUDIO="muxed"
+            270.m3u8
+            #EXT-X-STREAM-INF:BANDWIDTH=300000,RESOLUTION=320x180,CODECS="avc1.4d401e",AUDIO="missing"
+            180.m3u8
+            """,
+        )
+        val byLabel = HlsOptions.forMaster(m, vod).associateBy { it.label }
+        assertEquals("DEFAULT=YES wins", "https://cdn.example.com/v/audio/main.m3u8", byLabel.getValue("1080p").audioUrl)
+        assertEquals("https://cdn.example.com/v/audio/lo.m3u8", byLabel.getValue("360p").audioUrl)
+
+        val p270 = byLabel.getValue("270p")
+        assertNull("a group without its own playlist means the audio is in the video stream", p270.audioUrl)
+        assertFalse(p270.videoOnly)
+
+        val p180 = byLabel.getValue("180p")
+        assertNull("no playlist to pair with", p180.audioUrl)
+        assertTrue("so it stays video only", p180.videoOnly)
+        assertTrue(p180.detail!!.contains("video only"))
+
+        assertTrue("the audio renditions are still offered on their own", byLabel.keys.containsAll(listOf("Audio · Main", "Audio · Low")))
     }
 
     @Test fun sizeIsEstimatedFromBandwidthTimesDuration() {

@@ -41,7 +41,10 @@ object HlsOptions {
         for (v in master.variants.sortedWith(order)) {
             if (!seen.add(v.uri)) continue
             val audioOnly = master.isAudioOnly(v)
-            val videoOnly = !audioOnly && !master.hasMuxedAudio(v)
+            val separateAudio = !audioOnly && !master.hasMuxedAudio(v)
+            // The audio that plays with this quality is fetched along with it and merged, so the file has sound.
+            val audioUrl = if (separateAudio) master.audioFor(v)?.takeIf { it != v.uri } else null
+            val videoOnly = separateAudio && audioUrl == null
             val bw = v.estimateBandwidth
             val size = if (duration > 0 && bw > 0) (bw * duration / 8).toLong() else -1L
             out += MediaOption(
@@ -50,7 +53,11 @@ object HlsOptions {
                 detail = listOfNotNull(
                     bitrate(bw),
                     codecName(v.codecs),
-                    if (videoOnly) "video only" else null,
+                    when {
+                        videoOnly -> "video only"
+                        audioUrl != null -> "video + audio"
+                        else -> null
+                    },
                 ).joinToString(" · ").ifEmpty { null },
                 sizeBytes = size,
                 sizeEstimated = size > 0,
@@ -59,6 +66,7 @@ object HlsOptions {
                 hls = true,
                 audioOnly = audioOnly,
                 videoOnly = videoOnly,
+                audioUrl = audioUrl,
                 unsupportedReason = problem,
             )
         }
