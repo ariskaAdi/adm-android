@@ -100,7 +100,7 @@ class PrivateViewModel(app: Application) : AndroidViewModel(app) {
             when (val r = manager.moveOutOfPrivate(d.id)) {
                 is MoveResult.Moved -> {
                     Thumbnails.forget(getApplication(), listOf(d.id))
-                    _messages.send("Moved to Download/XDM: ${r.fileName}")
+                    _messages.send("Moved to Download/ADM: ${r.fileName}")
                 }
                 is MoveResult.Failed -> _messages.send("Could not move it out (${r.reason}). It stays in the private folder.")
                 is MoveResult.PublicCopyLeft -> Unit // only happens when moving in

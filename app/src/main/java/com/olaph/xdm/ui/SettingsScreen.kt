@@ -152,7 +152,7 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
             }
             Text("Lock the private folder", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 4.dp))
             Text(
-                "When XDM goes to the background. Turning the screen off always locks it.",
+                "When ADM goes to the background. Turning the screen off always locks it.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -202,7 +202,7 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
                 Column(Modifier.weight(1f)) {
                     Text("Intercept all browser downloads", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "Send downloads started in the built-in browser to XDM instead of the system downloader",
+                        "Send downloads started in the built-in browser to ADM instead of the system downloader",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -231,7 +231,7 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
                 Column(Modifier.weight(1f)) {
                     Text("Refresh expired links automatically", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "When a download fails with HTTP 403 or 410, XDM opens its page in the background and takes over a file of exactly " +
+                        "When a download fails with HTTP 403 or 410, ADM opens its page in the background and takes over a file of exactly " +
                             "the same size. Not for private downloads, HLS or YouTube.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -276,7 +276,13 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
             if (licensesOpen) LicensesDialog(vm) { licensesOpen = false }
             Spacer(Modifier.height(8.dp))
             Text(
-                "XDM ${BuildConfig.VERSION_NAME}",
+                "ADM ${BuildConfig.VERSION_NAME}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            // GPL-3.0: the original copyright notice stays visible in a modified version.
+            Text(
+                "Based on XDM by olaph (github.com/itsolaph/xdm), licensed under the GNU GPL v3",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

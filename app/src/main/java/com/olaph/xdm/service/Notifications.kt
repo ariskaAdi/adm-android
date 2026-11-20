@@ -115,7 +115,7 @@ class NotificationHelper(
         }
         return NotificationCompat.Builder(context, CHANNEL_PROGRESS)
             .setSmallIcon(R.drawable.ic_stat_download)
-            .setContentTitle("XDM")
+            .setContentTitle("ADM")
             .setContentText(text)
             .setContentIntent(openApp())
             .setOngoing(true)
@@ -212,7 +212,7 @@ class NotificationHelper(
         val n = NotificationCompat.Builder(context, CHANNEL_ATTENTION)
             .setSmallIcon(R.drawable.ic_stat_pause)
             .setContentTitle(title)
-            .setContentText("Open XDM or tap Resume to continue where they stopped")
+            .setContentText("Open ADM or tap Resume to continue where they stopped")
             .setContentIntent(openApp())
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)

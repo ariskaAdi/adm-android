@@ -80,19 +80,19 @@ fun SaveLocationSettings(vm: MainViewModel, settings: AppSettings) {
 
     Text("Save location", style = MaterialTheme.typography.titleMedium)
     Column(Modifier.padding(vertical = 8.dp)) {
-        Text(folder?.label ?: "Download/XDM", style = MaterialTheme.typography.titleSmall)
+        Text(folder?.label ?: "Download/ADM", style = MaterialTheme.typography.titleSmall)
         InfoText(
             when {
-                folder == null -> "The public Download/XDM folder, visible to the gallery and other apps"
+                folder == null -> "The public Download/ADM folder, visible to the gallery and other apps"
                 folder?.available == false ->
-                    "Not available right now (folder deleted, card removed or access revoked). Finished files go to Download/XDM until you choose another folder."
+                    "Not available right now (folder deleted, card removed or access revoked). Finished files go to Download/ADM until you choose another folder."
                 else -> "Folder you chose. Finished files are saved here."
             },
         )
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         TextButton(onClick = { picker.launch(null) }) { Text("Choose folder…") }
-        TextButton(onClick = vm::resetSaveFolder, enabled = settings.saveTreeUri != null) { Text("Reset to Download/XDM") }
+        TextButton(onClick = vm::resetSaveFolder, enabled = settings.saveTreeUri != null) { Text("Reset to Download/ADM") }
     }
     SwitchRow(
         "Sort into subfolders by type",
@@ -129,8 +129,8 @@ fun ScheduleSettings(vm: MainViewModel, settings: AppSettings) {
             Column(Modifier.weight(1f)) {
                 Text("Start on time", style = MaterialTheme.typography.titleSmall)
                 InfoText(
-                    if (exactAllowed) "Android lets XDM wake up exactly when the window opens"
-                    else "Without the \"Alarms & reminders\" access Android may refuse to start the downloads in the background; XDM then posts a \"Scheduled downloads are ready\" notification to tap.",
+                    if (exactAllowed) "Android lets ADM wake up exactly when the window opens"
+                    else "Without the \"Alarms & reminders\" access Android may refuse to start the downloads in the background; ADM then posts a \"Scheduled downloads are ready\" notification to tap.",
                 )
             }
             if (!exactAllowed) TextButton(onClick = { if (!BackgroundHelp.openExactAlarmSettings(context)) cantOpen(context) }) { Text("Allow") }
@@ -204,8 +204,8 @@ fun BackgroundSettings() {
     }.padding(vertical = 8.dp)) {
         Text("Battery optimisation", style = MaterialTheme.typography.titleSmall)
         InfoText(
-            if (exempt) "XDM is not restricted. Tap to see the list."
-            else "XDM may be stopped in the background to save battery. Tap to allow it to keep downloading.",
+            if (exempt) "ADM is not restricted. Tap to see the list."
+            else "ADM may be stopped in the background to save battery. Tap to allow it to keep downloading.",
         )
     }
     Column(Modifier.fillMaxWidth().clickable {
@@ -213,12 +213,12 @@ fun BackgroundSettings() {
     }.padding(vertical = 8.dp)) {
         Text("Background tips", style = MaterialTheme.typography.titleSmall)
         InfoText(
-            if (xiaomi) "Opens the Autostart list: switch XDM on there, or MIUI / HyperOS may stop it when the screen is off."
-            else "Opens XDM's app info, where you can check battery and background settings.",
+            if (xiaomi) "Opens the Autostart list: switch ADM on there, or MIUI / HyperOS may stop it when the screen is off."
+            else "Opens ADM's app info, where you can check battery and background settings.",
         )
     }
     InfoText(
-        "Android 15 also limits download services that run in the background to about 6 hours in 24. XDM then pauses " +
+        "Android 15 also limits download services that run in the background to about 6 hours in 24. ADM then pauses " +
             "the downloads and offers to continue; opening the app starts the clock over.",
     )
 }

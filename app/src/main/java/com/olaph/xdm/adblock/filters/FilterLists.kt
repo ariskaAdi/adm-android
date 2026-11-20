@@ -63,9 +63,9 @@ object FilterLists {
         homepage = "https://github.com/StevenBlack/hosts", license = "MIT", minRules = 1_000,
     )
     val XDM_EXTRA = FilterListSpec(
-        id = "xdm-extra", title = "XDM extra rules", format = ListFormat.FILTERS,
+        id = "xdm-extra", title = "ADM extra rules", format = ListFormat.FILTERS,
         asset = "xdm-extra.txt", url = null,
-        homepage = "built in", license = "part of XDM", minRules = 1,
+        homepage = "built in", license = "part of ADM", minRules = 1,
         appendAssets = listOf(PRIVATE_RULES_ASSET),
     )
 

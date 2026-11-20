@@ -51,7 +51,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.olaph.xdm"
+        applicationId = "com.adi.adm"
         minSdk = 26
         targetSdk = 35
         versionCode = 16

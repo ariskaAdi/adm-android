@@ -123,7 +123,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: bash .github/scripts/smoke.sh com.olaph.xdm apk/app-debug.apk
+          script: bash .github/scripts/smoke.sh com.adi.adm apk/app-debug.apk
 
       - name: Publish results to smoke branch
         if: always()

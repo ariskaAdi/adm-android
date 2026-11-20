@@ -48,7 +48,7 @@ fun ChangeUrlDialog(download: DownloadEntity, onDismiss: () -> Unit, onCheck: (S
             Column {
                 Text(download.fileName, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
                 Text(
-                    "The new link must lead to the same file. XDM checks its size first and keeps what is already downloaded.",
+                    "The new link must lead to the same file. ADM checks its size first and keeps what is already downloaded.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 8.dp),
@@ -116,7 +116,7 @@ fun ReplacementDialog(offer: ReplacementOffer, onConfirm: (restart: Boolean) -> 
                             LinkMatch.Reason.ETAG_CHANGED ->
                                 "The server says this file has changed. Mixing it with the part already saved could corrupt it, so the download would start from zero."
                             LinkMatch.Reason.SIZE_UNKNOWN ->
-                                "The server doesn't tell how big the file is, so XDM can't check that it is the same one. The download would start from zero."
+                                "The server doesn't tell how big the file is, so ADM can't check that it is the same one. The download would start from zero."
                         },
                         style = MaterialTheme.typography.bodyMedium,
                     )

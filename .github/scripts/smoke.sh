@@ -128,7 +128,7 @@ case "$vt_line" in
 esac
 
 # Save location, schedule and speed limit self-test (debug-only SaveTestActivity, no network): saves a file named like a video
-# into Download/XDM/Video through MediaStore, reads it back, deletes it, checks the schedule decision and holds the speed
+# into Download/ADM/Video through MediaStore, reads it back, deletes it, checks the schedule decision and holds the speed
 # limiter to 256 KB/s for 2 s. Logs one line with tag XDM, which goes into result.txt.
 #   SAVETEST PASS <details>   SAVETEST FAIL <reason>   (or no line within 90 s = FAIL)
 adb shell am start -n "$PKG/.debug.SaveTestActivity" >/dev/null 2>&1

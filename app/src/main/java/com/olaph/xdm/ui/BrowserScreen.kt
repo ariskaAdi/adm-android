@@ -613,17 +613,17 @@ private fun LinkMenu(vm: BrowserViewModel, target: LinkTarget) {
         text = {
             Column {
                 if (video != null) {
-                    action("Download video with XDM") { vm.downloadVideoFromMenu(target.tabId, video) }
+                    action("Download video with ADM") { vm.downloadVideoFromMenu(target.tabId, video) }
                     if (video != "blob") action("Copy video URL") { copyToClipboard(context, video) }
                 }
                 if (link != null) {
-                    action("Download with XDM") { vm.downloadLink(target.tabId, link) }
+                    action("Download with ADM") { vm.downloadLink(target.tabId, link) }
                     action("Open in new tab") { vm.newTab(link) }
                     action("Copy link") { copyToClipboard(context, link) }
                     action("Share link") { shareText(context, link) }
                 }
                 if (image != null) {
-                    action("Download image with XDM") { vm.downloadLink(target.tabId, image) }
+                    action("Download image with ADM") { vm.downloadLink(target.tabId, image) }
                     if (link == null) {
                         action("Open image in new tab") { vm.newTab(image) }
                         action("Copy image URL") { copyToClipboard(context, image) }

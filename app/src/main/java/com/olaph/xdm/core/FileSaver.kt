@@ -122,7 +122,7 @@ class FileSaver(
 
     @Suppress("DEPRECATION")
     private fun saveLegacy(temp: File, desiredName: String, mime: String, category: FileCategory?): Saved {
-        val base = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "XDM")
+        val base = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "ADM")
         val dir = if (category == null) base else File(base, category.folder)
         if (!dir.isDirectory && !dir.mkdirs()) throw IOException("Cannot create ${dir.path}")
         val name = FilenameUtils.uniqueName(desiredName) { File(dir, it).exists() }
@@ -305,8 +305,8 @@ class FileSaver(
     }
 
     companion object {
-        const val RELATIVE_PATH = "Download/XDM"
-        const val FOLDER_UNAVAILABLE_NOTE = "Saved to Download/XDM: chosen folder unavailable"
+        const val RELATIVE_PATH = "Download/ADM"
+        const val FOLDER_UNAVAILABLE_NOTE = "Saved to Download/ADM: chosen folder unavailable"
         private const val COPY_BUFFER = 256 * 1024
         private const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
     }
