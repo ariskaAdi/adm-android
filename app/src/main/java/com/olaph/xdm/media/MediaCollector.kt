@@ -132,11 +132,32 @@ class MediaCollector(private val maxCandidates: Int = MAX_CANDIDATES) {
 
     fun isEmpty(): Boolean = synchronized(lock) { items.isEmpty() }
 
-    /** Playing item first, then downloadable ones, newest first. */
+    /** Playing item first, then downloadable ones, newest first. Picture-only streams come paired with their sound. */
     fun snapshot(): List<DetectedMedia> = synchronized(lock) {
+        val sounds = items.values.filter { it.kind == MediaKind.HLS && it.options.size == 1 && it.options[0].audioOnly && it.options[0].supported }
         items.values
+            .map { pairWithSound(it, sounds) }
             .map { it.copy(playing = it.key == playingKey) }
             .sortedWith(compareByDescending<DetectedMedia> { it.playing }.thenByDescending { it.supported }.thenByDescending { it.seq })
+    }
+
+    /**
+     * A bare HLS stream with picture but no sound (its master playlist was never seen, so nothing named its audio)
+     * gets the sound stream found on the same page: the one of the same length (within [DURATION_TOLERANCE_SEC] or
+     * 3 %), or, when lengths are unknown, the only one there is. Downloading it then merges both into one file.
+     */
+    private fun pairWithSound(media: DetectedMedia, sounds: List<DetectedMedia>): DetectedMedia {
+        val option = media.options.singleOrNull() ?: return media
+        if (media.kind != MediaKind.HLS || !option.videoOnly || option.audioUrl != null || sounds.isEmpty()) return media
+        val d = option.durationSec
+        val sound = if (d > 0) {
+            sounds.filter { it.durationSec > 0 && kotlin.math.abs(it.durationSec - d) <= maxOf(DURATION_TOLERANCE_SEC, d * 0.03) }
+                .minWithOrNull(compareBy<DetectedMedia> { kotlin.math.abs(it.durationSec - d) }.thenByDescending { it.seq })
+        } else {
+            sounds.singleOrNull()
+        } ?: return media
+        val detail = option.detail?.replace(HlsOptions.VIDEO_ONLY_NO_SOUND, HlsOptions.VIDEO_PLUS_AUDIO) ?: HlsOptions.VIDEO_PLUS_AUDIO
+        return media.copy(options = listOf(option.copy(audioUrl = sound.options[0].url, videoOnly = false, detail = detail)))
     }
 
     private fun pageKey(url: String) = url.substringBefore('#')

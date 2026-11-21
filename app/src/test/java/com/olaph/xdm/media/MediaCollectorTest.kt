@@ -185,6 +185,43 @@ class MediaCollectorTest {
         assertNull("and only once", c.offer(bare, fromElement = true))
     }
 
+    // A page whose master playlist was missed: the picture and the sound show up as two bare streams.
+
+    private fun bare(url: String, seconds: Double, content: StreamTracks.Content) = MediaAnalysis.Found(
+        MediaKind.HLS, "HLS",
+        listOf(HlsOptions.withContent(MediaOption(url = url, label = "Stream", detail = "0:30", hls = true, extension = "ts", durationSec = seconds), content)),
+    )
+
+    @Test fun aPictureOnlyStreamIsPairedWithTheSoundOfTheSameLength() {
+        val c = MediaCollector().also { it.reset(page) }
+        c.offerAndAdd("https://cdn.example.com/v/720.m3u8", bare("https://cdn.example.com/v/720.m3u8", 30.0, StreamTracks.Content.VIDEO_ONLY))
+        c.offerAndAdd("https://cdn.example.com/a/other.m3u8", bare("https://cdn.example.com/a/other.m3u8", 12.0, StreamTracks.Content.AUDIO_ONLY))
+        c.offerAndAdd("https://cdn.example.com/a/eng.m3u8", bare("https://cdn.example.com/a/eng.m3u8", 30.2, StreamTracks.Content.AUDIO_ONLY))
+        val video = c.snapshot().first { it.url.endsWith("720.m3u8") }.options.single()
+        assertEquals("https://cdn.example.com/a/eng.m3u8", video.audioUrl)
+        assertFalse(video.videoOnly)
+        assertTrue(video.detail, video.detail!!.contains(HlsOptions.VIDEO_PLUS_AUDIO))
+        assertFalse(video.detail!!.contains("no sound"))
+        assertEquals("the sound streams stay listed on their own", 3, c.snapshot().size)
+    }
+
+    @Test fun withoutASoundStreamThePictureOnlyStreamSaysItHasNoSound() {
+        val c = MediaCollector().also { it.reset(page) }
+        c.offerAndAdd("https://cdn.example.com/v/720.m3u8", bare("https://cdn.example.com/v/720.m3u8", 30.0, StreamTracks.Content.VIDEO_ONLY))
+        c.offerAndAdd("https://cdn.example.com/a/short.m3u8", bare("https://cdn.example.com/a/short.m3u8", 12.0, StreamTracks.Content.AUDIO_ONLY))
+        val video = c.snapshot().first { it.url.endsWith("720.m3u8") }.options.single()
+        assertNull("lengths don't match", video.audioUrl)
+        assertTrue(video.videoOnly)
+        assertTrue(video.detail!!.contains(HlsOptions.VIDEO_ONLY_NO_SOUND))
+    }
+
+    @Test fun streamsWithSoundOfTheirOwnAreLeftAlone() {
+        val c = MediaCollector().also { it.reset(page) }
+        c.offerAndAdd("https://cdn.example.com/v/720.m3u8", bare("https://cdn.example.com/v/720.m3u8", 30.0, StreamTracks.Content.VIDEO_AND_AUDIO))
+        c.offerAndAdd("https://cdn.example.com/a/eng.m3u8", bare("https://cdn.example.com/a/eng.m3u8", 30.0, StreamTracks.Content.AUDIO_ONLY))
+        assertNull(c.snapshot().first { it.url.endsWith("720.m3u8") }.options.single().audioUrl)
+    }
+
     @Test fun unsupportedItemsAreListedBelowDownloadableOnes() {
         val c = MediaCollector().also { it.reset(page) }
         val dash = MediaAnalysis.Found(

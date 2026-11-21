@@ -55,7 +55,7 @@ object HlsOptions {
                     codecName(v.codecs),
                     when {
                         videoOnly -> "video only"
-                        audioUrl != null -> "video + audio"
+                        audioUrl != null -> VIDEO_PLUS_AUDIO
                         else -> null
                     },
                 ).joinToString(" · ").ifEmpty { null },
@@ -111,6 +111,27 @@ object HlsOptions {
             unsupportedReason = problem,
         )
     }
+
+    /**
+     * A bare media playlist's option once its first bytes told what it carries ([StreamTracks]): a stream with
+     * picture but no sound says so up front ("video only (no sound)"), and one with only sound is an audio item.
+     * [MediaCollector] later pairs such a picture with a sound stream of the same length.
+     */
+    fun withContent(option: MediaOption, content: StreamTracks.Content): MediaOption = when (content) {
+        StreamTracks.Content.VIDEO_ONLY -> option.copy(
+            videoOnly = true,
+            detail = listOfNotNull(option.detail, VIDEO_ONLY_NO_SOUND).joinToString(" · "),
+        )
+        StreamTracks.Content.AUDIO_ONLY -> option.copy(
+            audioOnly = true,
+            label = "Audio",
+            extension = if (option.extension == "ts") "m4a" else option.extension,
+        )
+        else -> option
+    }
+
+    const val VIDEO_ONLY_NO_SOUND = "video only (no sound)"
+    const val VIDEO_PLUS_AUDIO = "video + audio"
 
     fun qualityLabel(v: HlsVariant): String {
         val fps = v.frameRate?.takeIf { it >= 49 }?.let { Math.round(it).toInt() }

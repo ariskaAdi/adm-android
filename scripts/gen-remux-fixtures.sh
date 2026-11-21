@@ -40,6 +40,10 @@ rm hls-index.m3u8
 # (5b) the same audio as packed ADTS (an HLS audio rendition without TS): Mp4DashMuxerTest merges it with av.ts
 "$FFMPEG" "${q[@]}" -f lavfi -i "sine=frequency=330:sample_rate=44100:duration=5" -ac 2 -c:a aac -b:a 48k -f adts audio.aac
 
+# (5c) picture only, no sound (an HLS video rendition without its audio): StreamTracksTest / MediaProbeTest
+"$FFMPEG" "${q[@]}" -f lavfi -i "testsrc2=size=320x240:rate=25:duration=2" -c:v libx264 -preset veryfast -profile:v main -g 25 -bf 2 \
+  -b:v 100k -pix_fmt yuv420p -an -f mpegts video-only.ts
+
 # (6) H.265 + AAC
 "$FFMPEG" "${q[@]}" "${V5[@]}" "${A5[@]}" -c:v libx265 -preset veryfast -g 25 -b:v 120k -pix_fmt yuv420p \
   -x265-params log-level=error -tag:v hvc1 "${AAC[@]}" -shortest -f mpegts hevc.ts

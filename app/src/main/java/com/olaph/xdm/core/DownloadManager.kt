@@ -678,6 +678,25 @@ class DownloadManager(
 
     private suspend fun pump() = pumpMutex.withLock { pumpLocked() }
 
+    /** Waits for the charger or the network to differ from what held the queue last; see [watchHeldInputs]. */
+    private var heldInputsWatch: Job? = null
+
+    /**
+     * The queue reacts to the charger and the network through a StateFlow, which only reports a value it hasn't
+     * delivered before: a charger unplugged and plugged back while a pump runs looks like no change at all, and a
+     * queue that was held for "charging" in between would wait for some other event. So whenever [hold] depends on
+     * those inputs, this watches for them to differ from the values the decision used ([first] checks the current
+     * value first, so nothing in between is missed) and pumps again.
+     */
+    private fun watchHeldInputs(hold: Hold?, charging: Boolean, metered: Boolean) {
+        heldInputsWatch?.cancel()
+        heldInputsWatch = if (hold != Hold.CHARGING && hold != Hold.WIFI) null else scope.launch {
+            combine(power.charging, network.metered) { c, m -> c to m }.first { it != (charging to metered) }
+            // A pump of its own: the next pump cancels this watcher, which must not cut that pump short.
+            scope.launch { pump() }
+        }
+    }
+
     private suspend fun pumpLocked() {
         if (!_queueReleased.value) return
         val s = settings.current()
@@ -690,6 +709,7 @@ class DownloadManager(
         val general = holdFor(false)
         _hold.value = general
         _waitingForWifi.value = general == Hold.WIFI
+        watchHeldInputs(general, charging, metered)
 
         // Whatever runs but may not any more goes back to the queue (Wi-Fi gone, window closed, charger unplugged).
         jobs.forEach { (id, job) ->

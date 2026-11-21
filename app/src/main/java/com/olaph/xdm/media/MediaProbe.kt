@@ -114,7 +114,9 @@ class MediaProbe(client: OkHttpClient) {
         return when (playlist) {
             is MediaPlaylist -> {
                 val option = HlsOptions.forMedia(playlist) ?: return MediaAnalysis.Rejected
-                MediaAnalysis.Found(MediaKind.HLS, "HLS", listOf(option))
+                // Without its master the playlist doesn't say whether the stream has sound: look at its first bytes.
+                val content = if (option.audioOnly || !option.supported) StreamTracks.Content.UNKNOWN else streamContent(playlist, ua, headers)
+                MediaAnalysis.Found(MediaKind.HLS, "HLS", listOf(HlsOptions.withContent(option, content)))
             }
             is MasterPlaylist -> {
                 if (playlist.variants.isEmpty()) return MediaAnalysis.Rejected
@@ -133,6 +135,49 @@ class MediaProbe(client: OkHttpClient) {
             }
         }
     }
+
+    /**
+     * What a media playlist's stream carries, from the first [SNIFF_BYTES] of its fMP4 init section or first TS
+     * segment. Encrypted data and any failure give [StreamTracks.Content.UNKNOWN]: the item is then listed as before.
+     */
+    private suspend fun streamContent(playlist: MediaPlaylist, ua: String, headers: Map<String, String>): StreamTracks.Content {
+        val first = playlist.segments.firstOrNull() ?: return StreamTracks.Content.UNKNOWN
+        val map = first.map
+        val (url, byteRange, encrypted, mp4) = when {
+            map != null -> Quad(map.uri, map.byteRange, map.key?.isAes128 == true, true)
+            else -> Quad(first.uri, first.byteRange, first.key?.isAes128 == true, false)
+        }
+        if (encrypted) return StreamTracks.Content.UNKNOWN
+        val range = byteRange?.let { "bytes=${it.offset}-${it.offset + minOf(it.length, SNIFF_BYTES.toLong()) - 1}" }
+            ?: "bytes=0-${SNIFF_BYTES - 1}"
+        return try {
+            val bytes = fetchBytes(url, range, ua, HeaderCodec.scopeToHost(headers, playlist.url, url)) ?: return StreamTracks.Content.UNKNOWN
+            if (mp4) StreamTracks.fromMp4(bytes) else StreamTracks.fromTs(bytes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            StreamTracks.Content.UNKNOWN
+        }
+    }
+
+    private data class Quad(val url: String, val byteRange: com.olaph.xdm.engine.ByteRange?, val encrypted: Boolean, val mp4: Boolean)
+
+    /** At most [SNIFF_BYTES] from [range] (a server that ignores the Range header is cut off there). */
+    private suspend fun fetchBytes(url: String, range: String, ua: String, headers: Map<String, String>): ByteArray? =
+        http.newCall(buildRequest(url, ua, range = range, headers = headers)).executeAndUse { r ->
+            if (!r.isSuccessful) return@executeAndUse null
+            val body = r.body ?: return@executeAndUse null
+            val out = ByteArrayOutputStream()
+            val buf = ByteArray(8192)
+            body.byteStream().use { input ->
+                while (out.size() < SNIFF_BYTES) {
+                    val n = input.read(buf, 0, minOf(buf.size, SNIFF_BYTES - out.size()))
+                    if (n < 0) break
+                    out.write(buf, 0, n)
+                }
+            }
+            out.toByteArray()
+        }
 
     // ---- DASH ----
 
@@ -183,5 +228,7 @@ class MediaProbe(client: OkHttpClient) {
         val MEDIA_EXT = setOf("mp4", "m4v", "webm", "mkv", "mov", "3gp", "flv", "mp3", "m4a", "aac", "ogg", "oga", "opus", "wav", "flac")
         const val MIN_BYTES = 8L * 1024
         const val MAX_TEXT_BYTES = 2 * 1024 * 1024
+        /** Enough for an fMP4 init section or the PAT/PMT at the start of a TS segment. */
+        const val SNIFF_BYTES = 64 * 1024
     }
 }

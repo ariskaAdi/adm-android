@@ -227,6 +227,47 @@ class MediaProbeTest {
         assertEquals("DRM-protected stream", analyze("/drm.mpd", Kind.DASH).found().options.single().unsupportedReason)
     }
 
+    // ---- a media playlist seen without its master: its first segment tells whether it has sound ----
+
+    private fun fixture(name: String): ByteArray =
+        checkNotNull(javaClass.getResourceAsStream("/remux/$name")) { "missing fixture $name" }.use { it.readBytes() }
+
+    private fun bareStream(path: String, segment: String) {
+        routes["$path/index.m3u8"] = { playlist("#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:2,\nseg0.ts\n#EXT-X-ENDLIST") }
+        routes["$path/seg0.ts"] = { MockResponse().setBody(okio.Buffer().write(fixture(segment))) }
+    }
+
+    @Test fun aPictureOnlyStreamSaysItHasNoSound() = runBlocking {
+        bareStream("/v", "video-only.ts")
+        val o = analyze("/v/index.m3u8", Kind.HLS).found().options.single()
+        assertTrue(o.videoOnly)
+        assertTrue(o.detail, o.detail!!.endsWith("video only (no sound)"))
+        val sniff = seen.single { it.path!!.endsWith("seg0.ts") }
+        assertEquals("only the start of the segment is asked for", "bytes=0-65535", sniff.getHeader("Range"))
+    }
+
+    @Test fun aSoundOnlyStreamBecomesAnAudioItem() = runBlocking {
+        bareStream("/a", "audio.ts")
+        val o = analyze("/a/index.m3u8", Kind.HLS).found().options.single()
+        assertTrue(o.audioOnly)
+        assertEquals("Audio", o.label)
+    }
+
+    @Test fun aStreamWithBothIsListedAsBefore() = runBlocking {
+        bareStream("/av", "av.ts")
+        val o = analyze("/av/index.m3u8", Kind.HLS).found().options.single()
+        assertFalse(o.videoOnly)
+        assertFalse(o.audioOnly)
+        assertEquals("Stream", o.label)
+    }
+
+    @Test fun whenTheSegmentCantBeReadTheStreamIsStillListed() = runBlocking {
+        routes["/gone/index.m3u8"] = { playlist("#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:2,\nseg0.ts\n#EXT-X-ENDLIST") }
+        val o = analyze("/gone/index.m3u8", Kind.HLS).found().options.single() // seg0.ts answers 404
+        assertEquals("Stream", o.label)
+        assertFalse(o.videoOnly)
+    }
+
     @Test fun segmentsAndIgnoredKindsAreNeverProbed() = runBlocking {
         assertEquals(MediaAnalysis.Rejected, analyze("/x.ts", Kind.SEGMENT))
         assertEquals(MediaAnalysis.Rejected, analyze("/x.js", Kind.IGNORE))
