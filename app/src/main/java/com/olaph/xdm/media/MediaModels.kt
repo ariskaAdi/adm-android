@@ -50,6 +50,9 @@ data class DetectedMedia(
 ) {
     /** At least one option can be downloaded. */
     val supported: Boolean get() = options.any { it.supported }
+
+    /** Length in seconds when known (HLS playlists list it), otherwise -1. */
+    val durationSec: Double get() = options.maxOfOrNull { it.durationSec }?.takeIf { it > 0 } ?: -1.0
 }
 
 /** Outcome of checking a candidate URL. */

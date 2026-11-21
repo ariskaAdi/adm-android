@@ -118,4 +118,27 @@ class MediaClassifierTest {
         assertEquals("", MediaClassifier.extensionOf("/a/b.d/c"))
         assertEquals("", MediaClassifier.extensionOf("/a/file.verylongextension"))
     }
+
+    // --- TikTok-style links: no extension, the type only in a mime_type parameter ---
+
+    private val tiktok = "https://v16-webapp-prime.tiktok.com/video/tos/useast2a/tos-useast2a-ve-0068c001/oQabc123/" +
+        "?a=1988&bti=ODszNWYuMDE6&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=2400&bt=1200&cs=0&ds=6&ft=4fUEKMvt8Zmo0" +
+        "&mime_type=video_mp4&qs=0&rc=ZGk1aDs8&btag=e00088000&expire=1763740000&l=2026112114&ply_type=2&policy=2" +
+        "&signature=0123456789abcdef&tk=tt_chain_token"
+
+    @Test fun mimeTypeParameterMarksALinkAsMedia() {
+        assertEquals(Kind.UNKNOWN_MEDIA, kind(tiktok))
+        assertEquals(Kind.UNKNOWN_MEDIA, kind("https://cdn.example.com/a/b?mime_type=audio_mp4&sig=1"))
+        assertEquals("other parameters that only mention mime_type stay out", Kind.IGNORE, kind("https://cdn.example.com/a?mime_type=image_png"))
+    }
+
+    @Test fun whatThePagesOwnMediaElementPlaysIsCheckedEvenWithoutAKnownPattern() {
+        val bare = "https://media.example.com/v/8f3a9c2e?token=abc"
+        assertEquals("from the network alone it says nothing", Kind.IGNORE, kind(bare))
+        assertEquals(Kind.UNKNOWN_MEDIA, MediaClassifier.classifyElementSource(bare))
+        assertEquals("known kinds stay what they are", Kind.HLS, MediaClassifier.classifyElementSource("https://cdn.example.com/x/master.m3u8"))
+        assertEquals("images and scripts still stay out", Kind.IGNORE, MediaClassifier.classifyElementSource("https://cdn.example.com/poster.jpg"))
+        assertEquals(Kind.IGNORE, MediaClassifier.classifyElementSource("https://rr3---sn-x.googlevideo.com/videoplayback?id=1"))
+        assertEquals(Kind.IGNORE, MediaClassifier.classifyElementSource("not a url"))
+    }
 }

@@ -171,7 +171,7 @@ fun ListScreen(vm: MainViewModel, onOpenDetail: (Long) -> Unit, onOpenSettings: 
                 )
             } else {
                 TopAppBar(
-                    title = { Text("LangsungDownload") },
+                    title = { Text("ADM") },
                     actions = {
                         IconButton(onClick = onOpenPrivate) { Icon(Icons.Filled.Lock, "Private folder") }
                         IconButton(onClick = { vm.pauseAll() }) { Icon(Icons.Filled.PauseCircle, "Pause all") }
@@ -227,13 +227,13 @@ fun ListScreen(vm: MainViewModel, onOpenDetail: (Long) -> Unit, onOpenSettings: 
             }
             if (settings.saveFolderWarning) {
                 InfoCard(
-                    "The folder you chose for downloads isn't available, so new files go to Download/LangsungDownload. Pick another folder in Settings.",
+                    "The folder you chose for downloads isn't available, so new files go to Download/ADM. Pick another folder in Settings.",
                     actionLabel = "Settings", onAction = onOpenSettings, onDismiss = vm::dismissFolderWarning,
                 )
             }
             if (BatteryAdvice.shouldShowCard(batteryExempt, settings.batteryCardDismissed, items.orEmpty().map { it.entity })) {
                 InfoCard(
-                    "Battery saving can stop long downloads in the background; allowing LangsungDownload to ignore it keeps them going.",
+                    "Battery saving can stop long downloads in the background; allowing ADM to ignore it keeps them going.",
                     actionLabel = "Allow", onAction = { BackgroundHelp.openBatterySettings(context) }, onDismiss = vm::dismissBatteryCard,
                 )
             }
@@ -306,7 +306,7 @@ fun BulkDeleteDialog(summary: DeleteSummary, onDismiss: () -> Unit, onConfirm: (
                 }
                 Text(
                     if (alsoFiles) "The files are deleted permanently. This cannot be undone."
-                    else "Only the entries are removed; the files stay in Downloads/LangsungDownload.",
+                    else "Only the entries are removed; the files stay in Downloads/ADM.",
                     style = MaterialTheme.typography.bodySmall,
                     color = if (alsoFiles) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -323,7 +323,7 @@ fun BulkDeleteDialog(summary: DeleteSummary, onDismiss: () -> Unit, onConfirm: (
 private fun EmptyState(filter: Filter) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            if (filter == Filter.ALL) "No downloads yet.\nTap + or share a link to LangsungDownload." else "Nothing here.",
+            if (filter == Filter.ALL) "No downloads yet.\nTap + or share a link to ADM." else "Nothing here.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

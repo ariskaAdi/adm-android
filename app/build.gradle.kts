@@ -54,8 +54,8 @@ android {
         applicationId = "com.adi.adm"
         minSdk = 26
         targetSdk = 35
-        versionCode = 16
-        versionName = "0.8.4"
+        versionCode = 17
+        versionName = "0.9.0"
 
         // Empty = crash reporting is not set up in this build.
         buildConfigField("String", "CRASH_RELAY_URL", (privateConfig("crashRelayUrl") ?: "").asBuildConfigString())

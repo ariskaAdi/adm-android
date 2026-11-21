@@ -91,6 +91,8 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -183,12 +185,16 @@ private fun BrowserTabPage(vm: BrowserViewModel, tab: BrowserTab, onOpenSettings
             }
         }
         if (tab.findActive) FindBar(vm, tab)
-        Box(Modifier.weight(1f).fillMaxWidth()) {
+        // The page area's size bounds where the floating video button can be dragged.
+        var pageArea by remember { mutableStateOf(IntSize.Zero) }
+        Box(Modifier.weight(1f).fillMaxWidth().onSizeChanged { pageArea = it }) {
             if (tab.showHome) {
                 BrowserHome(vm, tab)
             } else {
                 key(tab.id, tab.webViewEpoch) { WebViewHost(vm, tab) }
-                if (vm.fullscreen == null) MediaButton(vm, tab, Modifier.align(Alignment.BottomEnd).padding(16.dp))
+                if (vm.fullscreen == null) {
+                    MediaButton(vm, tab, pageArea, MEDIA_BUTTON_MARGIN, Modifier.align(Alignment.BottomEnd).padding(MEDIA_BUTTON_MARGIN))
+                }
             }
             SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
         }
@@ -613,17 +619,17 @@ private fun LinkMenu(vm: BrowserViewModel, target: LinkTarget) {
         text = {
             Column {
                 if (video != null) {
-                    action("Download video with LangsungDownload") { vm.downloadVideoFromMenu(target.tabId, video) }
+                    action("Download video with ADM") { vm.downloadVideoFromMenu(target.tabId, video) }
                     if (video != "blob") action("Copy video URL") { copyToClipboard(context, video) }
                 }
                 if (link != null) {
-                    action("Download with LangsungDownload") { vm.downloadLink(target.tabId, link) }
+                    action("Download with ADM") { vm.downloadLink(target.tabId, link) }
                     action("Open in new tab") { vm.newTab(link) }
                     action("Copy link") { copyToClipboard(context, link) }
                     action("Share link") { shareText(context, link) }
                 }
                 if (image != null) {
-                    action("Download image with LangsungDownload") { vm.downloadLink(target.tabId, image) }
+                    action("Download image with ADM") { vm.downloadLink(target.tabId, image) }
                     if (link == null) {
                         action("Open image in new tab") { vm.newTab(image) }
                         action("Copy image URL") { copyToClipboard(context, image) }

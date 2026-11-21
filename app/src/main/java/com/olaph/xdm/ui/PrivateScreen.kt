@@ -195,7 +195,7 @@ private fun SetupPin(vm: PrivateViewModel, snackbar: SnackbarHostState, onBack: 
         ) {
             Text("Set a PIN", style = MaterialTheme.typography.titleLarge)
             Text(
-                "Files in the private folder are kept inside LangsungDownload's own storage: they don't show up in the gallery, " +
+                "Files in the private folder are kept inside ADM's own storage: they don't show up in the gallery, " +
                     "in file managers or in other apps, and they're not included in backups. Opening the folder needs this PIN.",
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -452,7 +452,7 @@ private fun VaultContent(vm: PrivateViewModel, snackbar: SnackbarHostState, onBa
         null -> Unit
         is PendingAction.Share -> LeaveWarning(
             title = "Share outside the private folder?",
-            text = "The app you share with gets its own copy. It can keep it, and that copy is no longer protected by LangsungDownload.",
+            text = "The app you share with gets its own copy. It can keep it, and that copy is no longer protected by ADM.",
             confirm = "Share",
             onDismiss = { pending = null },
         ) { pending = null; FileActions.share(context, vm.container, p.d) }
@@ -464,7 +464,7 @@ private fun VaultContent(vm: PrivateViewModel, snackbar: SnackbarHostState, onBa
         ) { pending = null; FileActions.openWith(context, vm.container, p.d) }
         is PendingAction.MoveOut -> LeaveWarning(
             title = "Move out of the private folder?",
-            text = "The file goes back to Download/LangsungDownload, where the gallery and other apps can see it.",
+            text = "The file goes back to Download/ADM, where the gallery and other apps can see it.",
             confirm = "Move out",
             onDismiss = { pending = null },
         ) { pending = null; vm.moveOut(p.d) }

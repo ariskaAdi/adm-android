@@ -24,6 +24,8 @@ class MediaCollector(private val maxCandidates: Int = MAX_CANDIDATES) {
     private val children = HashSet<String>()
     private var seq = 0L
     private var playingKey: String? = null
+    /** Length of the `blob:` video that is playing, while the playing item was picked by length. */
+    private var playingDurationSec: Double? = null
     private var manifestSeen = false
     private var segments = 0
 
@@ -42,13 +44,17 @@ class MediaCollector(private val maxCandidates: Int = MAX_CANDIDATES) {
         pageUrl = key
         epoch++
         items.clear(); seen.clear(); children.clear()
-        seq = 0; playingKey = null; manifestSeen = false; segments = 0
+        seq = 0; playingKey = null; playingDurationSec = null; manifestSeen = false; segments = 0
         true
     }
 
-    /** Looks at one URL; returns a candidate when it is worth verifying and was not seen before. */
-    fun offer(url: String, referer: String? = null): MediaCandidate? = synchronized(lock) {
-        val kind = MediaClassifier.classify(url)
+    /**
+     * Looks at one URL; returns a candidate when it is worth verifying and was not seen before. [fromElement]: the
+     * page's own media element plays it, so it is checked even when the URL doesn't look like media (see
+     * [MediaClassifier.classifyElementSource]).
+     */
+    fun offer(url: String, referer: String? = null, fromElement: Boolean = false): MediaCandidate? = synchronized(lock) {
+        val kind = if (fromElement) MediaClassifier.classifyElementSource(url) else MediaClassifier.classify(url)
         when (kind) {
             MediaClassifier.Kind.IGNORE -> return null
             MediaClassifier.Kind.SEGMENT -> { segments++; return null }
@@ -85,6 +91,11 @@ class MediaCollector(private val maxCandidates: Int = MAX_CANDIDATES) {
             seq = ++seq,
             referer = candidate.referer,
         )
+        // The playing blob video's manifest may only be checked now: take over the mark if the length fits better.
+        playingDurationSec?.let { d ->
+            val manifests = items.values.filter { it.kind != MediaKind.FILE }
+            closestByDuration(manifests, d)?.let { playingKey = it.key }
+        }
         true
     }
 
@@ -96,12 +107,28 @@ class MediaCollector(private val maxCandidates: Int = MAX_CANDIDATES) {
     /** The page's player started [url] (from a `play` event). Unknown URLs are remembered until they show up. */
     fun markPlaying(url: String?): Unit = synchronized(lock) {
         playingKey = url?.takeIf { it.isNotBlank() }?.let { MediaClassifier.normalize(it) }
+        playingDurationSec = null
     }
 
-    /** Player on a `blob:` source (MSE): the best guess is the newest manifest found on the page. */
-    fun markPlayingManifest(): Unit = synchronized(lock) {
-        playingKey = items.values.filter { it.kind != MediaKind.FILE }.maxByOrNull { it.seq }?.key ?: playingKey
+    /**
+     * Player on a `blob:` source (MSE), whose stream URL the page doesn't show. With the element's [durationSec]
+     * (when the page knows it), the manifest of the same length is the one playing: feeds such as X load the next
+     * video ahead, so the newest manifest is often the wrong one. Without a match the newest manifest is the guess.
+     * The duration is remembered, so a manifest whose check finishes after the `play` event is still recognised.
+     */
+    fun markPlayingManifest(durationSec: Double = -1.0): Unit = synchronized(lock) {
+        playingDurationSec = durationSec.takeIf { it > 0 && it.isFinite() }
+        val manifests = items.values.filter { it.kind != MediaKind.FILE }
+        playingKey = playingDurationSec?.let { d -> closestByDuration(manifests, d) }?.key
+            ?: manifests.maxByOrNull { it.seq }?.key
+            ?: playingKey
     }
+
+    /** The item whose length is within [DURATION_TOLERANCE_SEC] (or 3 %) of [d]; the newest of equally close ones. */
+    private fun closestByDuration(candidates: Collection<DetectedMedia>, d: Double): DetectedMedia? =
+        candidates
+            .filter { it.durationSec > 0 && kotlin.math.abs(it.durationSec - d) <= maxOf(DURATION_TOLERANCE_SEC, d * 0.03) }
+            .minWithOrNull(compareBy<DetectedMedia> { kotlin.math.abs(it.durationSec - d) }.thenByDescending { it.seq })
 
     fun isEmpty(): Boolean = synchronized(lock) { items.isEmpty() }
 
@@ -116,5 +143,8 @@ class MediaCollector(private val maxCandidates: Int = MAX_CANDIDATES) {
 
     companion object {
         const val MAX_CANDIDATES = 150
+
+        /** How far a manifest's length may be from the playing element's (segment rounding, player padding). */
+        const val DURATION_TOLERANCE_SEC = 1.5
     }
 }

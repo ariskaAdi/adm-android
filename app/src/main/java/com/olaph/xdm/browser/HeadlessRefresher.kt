@@ -114,7 +114,7 @@ class HeadlessRefresher(
             wv.addJavascriptInterface(
                 MediaBridge(
                     mediaSink = { url, _ -> if (!blocked(url)) offer(url, null) },
-                    playSink = {},
+                    playSink = { _, _ -> },
                     touchSink = {},
                 ),
                 MediaScript.BRIDGE_NAME,

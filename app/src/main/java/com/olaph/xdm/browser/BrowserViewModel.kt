@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.webkit.ProfileStore
@@ -237,6 +238,12 @@ class BrowserViewModel(app: Application) : AndroidViewModel(app) {
 
     /** The video sheet's "Save to private folder" box; null = not touched, the default from Settings applies. */
     var mediaSavePrivate by mutableStateOf<Boolean?>(null)
+
+    /**
+     * Where the floating video button was dragged to, in pixels from its default place in the bottom-right corner
+     * (so both values are 0 or negative). Shared by all tabs; kept while the app runs.
+     */
+    var mediaButtonOffset by mutableStateOf(Offset.Zero)
 
     /** A PIN exists, so the private folder can take downloads. */
     val vaultReady: StateFlow<Boolean> = container.vaultLock.pinSet.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -496,19 +503,24 @@ class BrowserViewModel(app: Application) : AndroidViewModel(app) {
         youtubeHandler?.invoke(link)
     }
 
-    /** Called for every request of the tab, on WebView's network thread. Never blocks and never alters the request. */
-    private fun onMediaRequest(tab: BrowserTab, url: String, referer: String?) {
+    /**
+     * Called for every request of the tab, on WebView's network thread, and for URLs the page script reports. Never
+     * blocks and never alters the request. [fromElement]: a `<video>`/`<audio>` element of the page plays [url], so
+     * it is checked even without a media-looking URL (TikTok's `/video/tos/...?mime_type=video_mp4`).
+     */
+    private fun onMediaRequest(tab: BrowserTab, url: String, referer: String?, fromElement: Boolean = false) {
         if (isYoutube(tab)) return
-        val candidate = tab.media.offer(url, referer ?: tab.url) ?: return
+        val candidate = tab.media.offer(url, referer ?: tab.url, fromElement) ?: return
         mainHandler.post {
             launchProbe(tab, candidate, openSheetWhenFound = false)
             checkRefreshCandidate(tab, candidate)
         }
     }
 
-    private fun onPlayEvent(tab: BrowserTab, url: String) {
+    /** [durationSec] is the playing element's length (-1 unknown); for `blob:` players it picks the matching stream. */
+    private fun onPlayEvent(tab: BrowserTab, url: String, durationSec: Double) {
         if (isYoutube(tab)) return
-        if (url.isBlank()) tab.media.markPlayingManifest() else tab.media.markPlaying(url)
+        if (url.isBlank()) tab.media.markPlayingManifest(durationSec) else tab.media.markPlaying(url)
         publishMedia(tab, pulse = false)
     }
 
@@ -679,8 +691,14 @@ class BrowserViewModel(app: Application) : AndroidViewModel(app) {
         wv.addJavascriptInterface(
             MediaBridge(
                 // URLs the page itself reports (DOM scan) are filtered too: an ad's <video src> must not be offered.
-                mediaSink = { url, _ -> if (!adBlocker.shouldBlockMediaUrl(url, contextFor(tab))) onMediaRequest(tab, url, null) },
-                playSink = { url -> onPlayEvent(tab, url) },
+                // "dom" (a <video>/<audio>/<source> src) and "play" come from the page's own media elements; "meta"
+                // (og:video) may name a player page, so it still has to look like media.
+                mediaSink = { url, source ->
+                    if (!adBlocker.shouldBlockMediaUrl(url, contextFor(tab))) {
+                        onMediaRequest(tab, url, null, fromElement = source == "dom" || source == "play")
+                    }
+                },
+                playSink = { url, durationSec -> onPlayEvent(tab, url, durationSec) },
                 touchSink = { url ->
                     tab.touchedVideo = url.ifEmpty { null }
                     tab.touchedAt = SystemClock.uptimeMillis()

@@ -5,6 +5,8 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,28 +46,66 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.olaph.xdm.browser.BrowserTab
 import com.olaph.xdm.browser.BrowserViewModel
 import com.olaph.xdm.core.Formatters
 import com.olaph.xdm.media.DetectedMedia
+import com.olaph.xdm.media.HlsOptions
 import com.olaph.xdm.media.MediaKind
 import com.olaph.xdm.media.MediaOption
 import com.olaph.xdm.youtube.YoutubeUrls
 
-/** Floating "download video" button: badge = number of detected items, pulses when a new one shows up. */
+/** Gap between the floating video button and the edges of the page area. */
+val MEDIA_BUTTON_MARGIN = 16.dp
+
+/**
+ * Floating "download video" button: badge = number of detected items, pulses when a new one shows up.
+ *
+ * It can be dragged anywhere inside [area] (the page area, which [modifier] places it in, bottom-right, with [margin]
+ * around it), so it never has to cover a link or a player control. A tap still opens the list.
+ */
 @Composable
-fun MediaButton(vm: BrowserViewModel, tab: BrowserTab, modifier: Modifier = Modifier) {
+fun MediaButton(vm: BrowserViewModel, tab: BrowserTab, area: IntSize, margin: Dp, modifier: Modifier = Modifier) {
     val count = tab.mediaItems.size
+    val marginPx = with(LocalDensity.current) { margin.toPx() }
+    var size by remember { mutableStateOf(IntSize.Zero) }
+
+    // Offsets are measured from the default corner, so the button can only move up and to the left, and never past
+    // the opposite edges. Clamping on every read also keeps it on screen after a rotation shrinks the area.
+    fun clamp(o: Offset): Offset {
+        val maxLeft = (area.width - size.width - 2 * marginPx).coerceAtLeast(0f)
+        val maxUp = (area.height - size.height - 2 * marginPx).coerceAtLeast(0f)
+        return Offset(o.x.coerceIn(-maxLeft, 0f), o.y.coerceIn(-maxUp, 0f))
+    }
+
+    val draggable = modifier
+        .offset { clamp(vm.mediaButtonOffset).let { IntOffset(it.x.roundToInt(), it.y.roundToInt()) } }
+        .onSizeChanged { size = it }
+        // Dragging starts after the touch slop and consumes the moves, which cancels the button's own tap.
+        .pointerInput(area, size) {
+            detectDragGestures { change, amount ->
+                change.consume()
+                vm.mediaButtonOffset = clamp(clamp(vm.mediaButtonOffset) + amount)
+            }
+        }
 
     // On a YouTube video, Shorts or playlist page the button opens the YouTube sheet (the page's own player requests
     // are not sniffed). Home, search and channel pages stay quiet.
     if (vm.isYoutube(tab)) {
         if (!YoutubeUrls.isDownloadablePage(tab.url)) return
-        FloatingActionButton(onClick = { vm.openYoutube(tab) }, modifier = modifier) {
-            Icon(Icons.Filled.Download, "Download this YouTube video")
+        FloatingActionButton(onClick = { vm.openYoutube(tab) }, modifier = draggable) {
+            Icon(Icons.Filled.Download, "Download this YouTube video (drag to move)")
         }
         return
     }
@@ -78,9 +118,9 @@ fun MediaButton(vm: BrowserViewModel, tab: BrowserTab, modifier: Modifier = Modi
             scale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
         }
     }
-    FloatingActionButton(onClick = { tab.mediaSheetOpen = true }, modifier = modifier.scale(scale.value)) {
+    FloatingActionButton(onClick = { tab.mediaSheetOpen = true }, modifier = draggable.scale(scale.value)) {
         BadgedBox(badge = { Badge { Text(count.toString()) } }) {
-            Icon(Icons.Filled.Download, "Download video ($count found)")
+            Icon(Icons.Filled.Download, "Download video ($count found, drag to move)")
         }
     }
 }
@@ -121,7 +161,9 @@ fun MediaSheet(vm: BrowserViewModel, tab: BrowserTab) {
                 }
             }
             Text(
-                "DRM-protected streams (Netflix, Disney+, …) can't be downloaded. " +
+                "“Playing” marks the video your player is showing; when the page hides its link, the one with the same " +
+                    "length is picked, so check the length if a feed shows several. " +
+                    "DRM-protected streams (Netflix, Disney+, …) can't be downloaded. " +
                     "Live streams and DASH are not supported yet. Streams in HLS are saved as .ts (or .mp4 for fMP4) without conversion.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -146,7 +188,19 @@ private fun MediaGroup(media: DetectedMedia, onPick: (MediaOption) -> Unit) {
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
-            if (media.playing) PlayingMark()
+            // The length tells similar videos apart (a feed preloads the next one); compare it with the player's.
+            if (media.durationSec > 0) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    HlsOptions.duration(media.durationSec),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            if (media.playing) {
+                Spacer(Modifier.width(8.dp))
+                PlayingMark()
+            }
         }
         media.options.forEach { OptionRow(media, it, onPick, indent = true) }
     } else {

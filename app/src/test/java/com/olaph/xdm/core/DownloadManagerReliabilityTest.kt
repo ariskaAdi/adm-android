@@ -620,7 +620,7 @@ class DownloadManagerReliabilityTest {
         flaky.note = FileSaver.FOLDER_UNAVAILABLE_NOTE
         val id = manager.add(url(), "note.bin", 2, startNow = true)
         waitUntil("completed") { status(id) == DownloadStatus.COMPLETED }
-        assertEquals("Saved to Download/LangsungDownload: chosen folder unavailable", dao.find(id)!!.error)
+        assertEquals("Saved to Download/ADM: chosen folder unavailable", dao.find(id)!!.error)
     }
 
     @Test fun notEnoughRoomForThePartialFileFailsBeforeAnythingIsFetched() = runBlocking {

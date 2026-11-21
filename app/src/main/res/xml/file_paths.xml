@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Used only on API 26-28, where finished files are plain files in Download/LangsungDownload -->
-    <external-path name="downloads" path="Download/LangsungDownload/" />
+    <!-- Used only on API 26-28, where finished files are plain files in Download/ADM -->
+    <external-path name="downloads" path="Download/ADM/" />
     <!-- Private folder: only reachable through a one-off grant (Share / Open with, after a warning) -->
     <files-path name="private" path="private/" />
 </paths>

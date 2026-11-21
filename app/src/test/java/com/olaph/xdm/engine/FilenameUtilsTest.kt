@@ -1,6 +1,7 @@
 package com.olaph.xdm.engine
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -164,5 +165,47 @@ class FilenameUtilsTest {
     @Test fun splitExtensionIgnoresLeadingDotAndSentences() {
         assertEquals(".bashrc" to "", FilenameUtils.splitExtension(".bashrc"))
         assertEquals("Mr. Smith report" to "", FilenameUtils.splitExtension("Mr. Smith report"))
+    }
+
+    // --- automatic names for links whose own name says nothing ---
+
+    private val now = java.time.LocalDateTime.of(2026, 11, 21, 14, 30, 5)
+
+    @Test fun stockServerNamesAreGeneric() {
+        for (n in listOf(
+            "index.m3u8", "master.m3u8", "playlist.m3u8", "chunklist_w1234567.m3u8", "index_0_av.m3u8", "prog_index.m3u8",
+            "videoplayback", "download", "video.mp4", "master-720p.m3u8", "1080p.mp4", "1234567890.mp4", "x.mp4",
+            "a1b2c3d4e5f60718293a4b5c6d7e8f90.mp4", "3f2504e0-4f89-11d3-9a0c-0305e82c3301.ts",
+        )) {
+            assertTrue("$n is generic", FilenameUtils.isGenericName(n))
+        }
+    }
+
+    @Test fun realNamesAreKept() {
+        for (n in listOf(
+            "ubuntu-24.04.3-desktop-amd64.iso", "Big Buck Bunny.mp4", "report.pdf", "IMG_20240101_123456.jpg",
+            "Some Title (720p).mp4", "index of songs.mp3", "video tutorial kotlin.mp4", "app-release.apk",
+        )) {
+            assertFalse("$n is kept", FilenameUtils.isGenericName(n))
+        }
+    }
+
+    @Test fun autoNameIsSiteThenDateAndTimeWithTheOriginalExtension() {
+        assertEquals("x.com_20261121_143005.m3u8", FilenameUtils.meaningfulName("index.m3u8", "https://www.x.com/user/status/1", now))
+        assertEquals("cdn.example.org_20261121_143005.mp4", FilenameUtils.meaningfulName("videoplayback.mp4", "https://cdn.example.org:8443/v?id=1", now))
+        assertEquals("download_20261121_143005", FilenameUtils.meaningfulName("download", null, now))
+        assertEquals("a real name stays", "Big Buck Bunny.mp4", FilenameUtils.meaningfulName("Big Buck Bunny.mp4", "https://x.com/", now))
+    }
+
+    @Test fun autoNamesDifferFromOneSecondToTheNext() {
+        val a = FilenameUtils.meaningfulName("index.m3u8", "https://x.com/a", now)
+        val b = FilenameUtils.meaningfulName("index.m3u8", "https://x.com/b", now.plusSeconds(1))
+        assertTrue("$a != $b", a != b)
+    }
+
+    @Test fun hostOfHandlesOddUrls() {
+        assertEquals("example.com", FilenameUtils.hostOf("https://user:pw@WWW.Example.com:8080/a?b#c"))
+        assertNull(FilenameUtils.hostOf("not a url"))
+        assertNull(FilenameUtils.hostOf(null))
     }
 }

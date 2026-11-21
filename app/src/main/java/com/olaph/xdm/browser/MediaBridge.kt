@@ -10,7 +10,7 @@ import android.webkit.JavascriptInterface
  */
 class MediaBridge(
     private val mediaSink: (url: String, source: String) -> Unit,
-    private val playSink: (url: String) -> Unit,
+    private val playSink: (url: String, durationSec: Double) -> Unit,
     private val touchSink: (url: String) -> Unit,
 ) {
     /** A `<video>`/`<audio>`/`<source>`/meta URL found in the DOM. */
@@ -20,10 +20,14 @@ class MediaBridge(
         mediaSink(u, source.orEmpty().take(16))
     }
 
-    /** A media element started playing; blank [url] means a `blob:` (MSE) source. */
+    /**
+     * A media element started playing, or the length of one that is playing became known; blank [url] means a
+     * `blob:` (MSE) source. [duration] is the element's length in seconds, or 0 when unknown (NaN, live).
+     */
     @JavascriptInterface
-    fun onPlay(url: String?) {
-        playSink(clean(url).orEmpty())
+    fun onPlay(url: String?, duration: Double) {
+        val d = duration.takeIf { it.isFinite() && it > 0 && it < MAX_DURATION_SEC } ?: -1.0
+        playSink(clean(url).orEmpty(), d)
     }
 
     /** The user touched a media element ([url] is "blob" for MSE sources); used by the long-press menu. */
@@ -41,6 +45,8 @@ class MediaBridge(
 
     private companion object {
         const val MAX_URL = 4096
+        /** Anything longer than a day is not a real length (live streams report Infinity). */
+        const val MAX_DURATION_SEC = 86_400.0
     }
 }
 
@@ -69,6 +75,12 @@ object MediaScript {
     try { B.onMedia(a, src); } catch (e) {}
   }
   function srcOf(el) { return el.currentSrc || el.src || ''; }
+  function lengthOf(el) { var d = el.duration; return (isFinite(d) && d > 0) ? d : 0; }
+  function reportPlay(el) {
+    var u = srcOf(el);
+    try { B.onPlay(u.indexOf('http') === 0 ? u : '', lengthOf(el)); } catch (x) {}
+    return u;
+  }
   function isMedia(el) { return el && (el.tagName === 'VIDEO' || el.tagName === 'AUDIO'); }
   function remember(e) {
     try {
@@ -89,9 +101,12 @@ object MediaScript {
     doc.__xdmL = 1;
     doc.addEventListener('play', function (e) {
       if (!isMedia(e.target)) return;
-      var u = srcOf(e.target);
-      try { B.onPlay(u.indexOf('http') === 0 ? u : ''); } catch (x) {}
-      send(u, 'play');
+      send(reportPlay(e.target), 'play');
+    }, true);
+    // MSE players often start before the length is known: report it again once it is, if still playing.
+    doc.addEventListener('durationchange', function (e) {
+      if (!isMedia(e.target) || e.target.paused || !lengthOf(e.target)) return;
+      reportPlay(e.target);
     }, true);
     doc.addEventListener('touchstart', remember, { capture: true, passive: true });
     doc.addEventListener('contextmenu', remember, true);

@@ -59,6 +59,8 @@ object MediaClassifier {
         val query = http.encodedQuery?.lowercase().orEmpty()
         val decodedQuery = runCatching { URLDecoder.decode(query, "UTF-8") }.getOrDefault(query)
         if ("mime=video" in decodedQuery || "mime=audio" in decodedQuery) return true
+        // TikTok and other CDNs: `/video/tos/.../?mime_type=video_mp4&signature=...`, no extension in the path.
+        if ("mime_type=video" in decodedQuery || "mime_type=audio" in decodedQuery) return true
         if ("videoplayback" in path) return true
         if (path.contains("/hls/") || path.contains("playlist.m3u8") || path.contains("master.m3u8")) return true
         // A manifest passed as a parameter: player.php?src=https://cdn/x/master.m3u8
@@ -66,6 +68,23 @@ object MediaClassifier {
             val value = param.substringAfter('=', "").substringBefore('#')
             value.endsWith(".m3u8") || value.endsWith(".mpd") || value.contains(".m3u8?") || value.contains(".mpd?")
         }
+    }
+
+    /**
+     * Like [classify], for a URL the page's own `<video>`/`<audio>` element plays (its `src`, or the source of a
+     * `play` event). That is a media file whatever the URL looks like, so an unrecognised one (no extension, no
+     * known pattern) is [Kind.UNKNOWN_MEDIA] and gets checked, instead of dropped. Images, scripts and the like by
+     * extension, and YouTube's stream chunks, still stay out. The check only lists it if the server answers with
+     * an audio or video type.
+     */
+    fun classifyElementSource(url: String): Kind {
+        val kind = classify(url)
+        if (kind != Kind.IGNORE) return kind
+        val http = url.toHttpUrlOrNull() ?: return Kind.IGNORE
+        val host = http.host.lowercase()
+        if (YOUTUBE_STREAM_HOSTS.any { host == it || host.endsWith(".$it") }) return Kind.IGNORE
+        if (extensionOf(http.encodedPath.lowercase()) in IGNORED_EXT) return Kind.IGNORE
+        return Kind.UNKNOWN_MEDIA
     }
 
     /** True for an `.m3u8` URL (also with a query string). */

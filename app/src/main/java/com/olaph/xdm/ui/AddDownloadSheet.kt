@@ -95,7 +95,11 @@ fun AddDownloadSheet(
     val headers = prefill?.headers.orEmpty()
     val origin = DownloadHeaders.origin(prefill?.pageUrl)
     var url by rememberSaveable { mutableStateOf(prefill?.url.orEmpty()) }
-    var fileName by rememberSaveable { mutableStateOf(prefill?.fileName.orEmpty()) }
+    // Names that say nothing ("index.m3u8", "videoplayback", a hash) become "site_date_time.ext", so there's nothing
+    // to type and one video doesn't look like a duplicate of the last. A name the user typed is never changed.
+    fun auto(name: String, link: String): String =
+        FilenameUtils.meaningfulName(name, prefill?.pageUrl?.takeIf { link == prefill.url } ?: link)
+    var fileName by rememberSaveable { mutableStateOf(prefill?.fileName?.let { auto(it, prefill.url) }.orEmpty()) }
     var nameEdited by rememberSaveable { mutableStateOf(false) }
     var connections by rememberSaveable { mutableIntStateOf(defaultConnections) }
     var probe by remember { mutableStateOf<ProbeState>(ProbeState.Idle) }
@@ -114,7 +118,7 @@ fun AddDownloadSheet(
         }
         if (!validUrl || hls) {
             probe = ProbeState.Idle
-            if (hls && !nameEdited && fileName.isBlank()) fileName = FilenameUtils.resolve(null, trimmed, null)
+            if (hls && !nameEdited && fileName.isBlank()) fileName = auto(FilenameUtils.resolve(null, trimmed, null), trimmed)
             return@LaunchedEffect
         }
         probe = ProbeState.Loading
@@ -122,14 +126,14 @@ fun AddDownloadSheet(
         try {
             val result = container.manager.probe(trimmed, headers)
             probe = ProbeState.Done(result)
-            if (!nameEdited) fileName = result.fileName
+            if (!nameEdited) fileName = auto(result.fileName, trimmed)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             probe = ProbeState.Failed(e.message ?: "Could not reach the server")
             // Keep the browser-provided name (from Content-Disposition) when the probe can't improve on it.
             if (!nameEdited && (trimmed != prefill?.url || fileName.isBlank())) {
-                fileName = FilenameUtils.resolve(null, trimmed, null)
+                fileName = auto(FilenameUtils.resolve(null, trimmed, null), trimmed)
             }
         }
     }
@@ -139,7 +143,7 @@ fun AddDownloadSheet(
 
     suspend fun addNow(startNow: Boolean) {
         val result = (probe as? ProbeState.Done)?.result
-        val name = fileName.ifBlank { result?.fileName ?: FilenameUtils.resolve(null, trimmed, null) }
+        val name = fileName.ifBlank { auto(result?.fileName ?: FilenameUtils.resolve(null, trimmed, null), trimmed) }
         container.manager.add(
             trimmed, name, connections, startNow, result, headers,
             kind = if (hls) DownloadKind.HLS else DownloadKind.HTTP,
@@ -155,7 +159,7 @@ fun AddDownloadSheet(
         adding = true
         scope.launch {
             val result = (probe as? ProbeState.Done)?.result
-            val name = fileName.ifBlank { result?.fileName ?: FilenameUtils.resolve(null, trimmed, null) }
+            val name = fileName.ifBlank { auto(result?.fileName ?: FilenameUtils.resolve(null, trimmed, null), trimmed) }
             // A playlist's size is only an estimate: it says nothing about which file it is.
             val size = if (hls) -1L else result?.contentLength ?: prefill?.contentLength?.takeIf { trimmed == prefill.url } ?: -1L
             val match = container.manager.findDuplicate(DuplicateCandidate(trimmed, name, size, isPrivate = savePrivate && privateAvailable))

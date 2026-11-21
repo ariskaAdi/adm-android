@@ -149,6 +149,57 @@ object FilenameUtils {
         return base to ext
     }
 
+    // ---- automatic names for links whose own name says nothing ----
+
+    /** Names streaming servers and CDNs give every file ("index.m3u8", "master", "videoplayback"...). */
+    private val GENERIC_BASES = setOf(
+        FALLBACK_NAME, "index", "playlist", "master", "main", "manifest", "chunklist", "prog_index", "media", "video",
+        "audio", "videoplayback", "stream", "file", "output", "default", "source", "get", "play", "view", "watch",
+        "embed", "content", "data", "attachment", "blob", "hls", "dash", "segment", "seg", "init", "mp4", "untitled",
+    )
+    private val NUMBERS_OR_QUALITY = Regex("^(\\d+|\\d{3,4}p\\d{0,2})$")
+    private val ID_CHARS = Regex("^[A-Za-z0-9_-]+$")
+    private val TOKEN_SPLIT = Regex("[_\\-. ]+")
+    private val STAMP = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+
+    /**
+     * True when [name] tells nothing about the file: a stock server name ("index.m3u8", "chunklist_w1234.m3u8",
+     * "master-720p"), only digits or a quality ("1080p"), one or two characters, or a long random id (a hash or
+     * UUID). Every video from such links would get the same or an unreadable name.
+     */
+    fun isGenericName(name: String): Boolean {
+        val base = splitExtension(name).first.trim().lowercase()
+        if (base.length <= 2) return true
+        if (base in GENERIC_BASES || NUMBERS_OR_QUALITY.matches(base)) return true
+        val tokens = base.split(TOKEN_SPLIT).filter { it.isNotEmpty() }
+        // "chunklist_w1234", "index_0_av", "master-v1": a stock word followed only by numbers or short tags
+        if (tokens.size > 1 && tokens[0] in GENERIC_BASES && tokens.drop(1).all { t -> t.any(Char::isDigit) || t.length <= 3 }) {
+            return true
+        }
+        // A hash or UUID: long, id characters only, and a good share of digits ("IMG_20240101_123456" is too short).
+        return base.length >= 24 && ID_CHARS.matches(base) && base.count(Char::isDigit) * 4 >= base.length
+    }
+
+    /** The host of [url] without "www.", or null. */
+    fun hostOf(url: String?): String? {
+        if (url.isNullOrBlank()) return null
+        val host = url.substringAfter("://", "").substringBefore('/').substringBefore('?').substringBefore('#')
+            .substringAfterLast('@').substringBefore(':').lowercase().removePrefix("www.")
+        return host.takeIf { it.isNotBlank() }
+    }
+
+    /** "x.com_20261121_143005.mp4": the site, then the date and time, then [extension] (with its dot, or ""). */
+    fun autoName(site: String?, extension: String, now: java.time.LocalDateTime = java.time.LocalDateTime.now()): String =
+        sanitize("${hostOf(site) ?: FALLBACK_NAME}_${now.format(STAMP)}$extension")
+
+    /**
+     * [name] when it says what the file is; otherwise ([isGenericName]) an [autoName] from [site] (the page the link
+     * came from, or the link itself) that keeps [name]'s extension. Saves typing a name for every video and keeps
+     * one stream from looking like a duplicate of the last.
+     */
+    fun meaningfulName(name: String, site: String?, now: java.time.LocalDateTime = java.time.LocalDateTime.now()): String =
+        if (isGenericName(name)) autoName(site, splitExtension(name).second, now) else name
+
     /** `name`, or `name (1).ext`, `name (2).ext`... for the first candidate [exists] rejects. */
     fun uniqueName(name: String, exists: (String) -> Boolean): String {
         if (!exists(name)) return name

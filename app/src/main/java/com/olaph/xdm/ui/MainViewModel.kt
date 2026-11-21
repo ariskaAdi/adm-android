@@ -279,7 +279,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** "Move to private folder" on a finished public download. Runs in the app scope like the deletes. */
     fun moveToPrivate(d: DownloadEntity) {
-        val publicPath = d.savedPath ?: "Download/LangsungDownload"
+        val publicPath = d.savedPath ?: "Download/ADM"
         container.scope.launch {
             if (!container.vaultLock.hasPin()) {
                 _events.send(Event.Message("Set up the private folder first: tap the lock icon at the top."))

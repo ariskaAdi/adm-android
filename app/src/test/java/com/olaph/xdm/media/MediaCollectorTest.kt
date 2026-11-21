@@ -131,6 +131,60 @@ class MediaCollectorTest {
         assertEquals(MediaKind.HLS, top.kind)
     }
 
+    private fun hlsOf(seconds: Double, variant: String) = MediaAnalysis.Found(
+        MediaKind.HLS, "HLS", listOf(MediaOption(url = variant, label = "720p", hls = true, durationSec = seconds)),
+    )
+
+    @Test fun blobPlaybackPicksTheManifestOfTheSameLengthNotTheNewest() {
+        // A feed (X) plays a 45 s video and has already loaded the next one, a 12 s clip.
+        val c = MediaCollector().also { it.reset(page) }
+        c.offerAndAdd("https://video.example.com/a/master.m3u8", hlsOf(45.2, "https://video.example.com/a/720.m3u8"))
+        c.offerAndAdd("https://video.example.com/b/master.m3u8", hlsOf(12.0, "https://video.example.com/b/720.m3u8"))
+        c.markPlayingManifest(44.9)
+        val top = c.snapshot().first()
+        assertTrue(top.playing)
+        assertEquals("https://video.example.com/a/master.m3u8", top.url)
+        assertEquals(45.2, top.durationSec, 0.001)
+    }
+
+    @Test fun aManifestCheckedAfterThePlayEventTakesOverTheMarkWhenItsLengthFits() {
+        val c = MediaCollector().also { it.reset(page) }
+        c.offerAndAdd("https://video.example.com/next/master.m3u8", hlsOf(12.0, "https://video.example.com/next/720.m3u8"))
+        c.markPlayingManifest(30.0) // nothing that long yet: the newest is the guess
+        assertEquals("https://video.example.com/next/master.m3u8", c.snapshot().first { it.playing }.url)
+        c.offerAndAdd("https://video.example.com/this/master.m3u8", hlsOf(30.4, "https://video.example.com/this/720.m3u8"))
+        assertEquals("https://video.example.com/this/master.m3u8", c.snapshot().first { it.playing }.url)
+    }
+
+    @Test fun withoutAMatchingLengthTheNewestManifestIsStillTheGuess() {
+        val c = MediaCollector().also { it.reset(page) }
+        c.offerAndAdd("https://video.example.com/a/master.m3u8", hlsOf(45.0, "https://video.example.com/a/720.m3u8"))
+        c.offerAndAdd("https://video.example.com/b/master.m3u8", hlsOf(12.0, "https://video.example.com/b/720.m3u8"))
+        c.markPlayingManifest(90.0)
+        assertEquals("https://video.example.com/b/master.m3u8", c.snapshot().first { it.playing }.url)
+        c.markPlayingManifest() // length unknown
+        assertEquals("https://video.example.com/b/master.m3u8", c.snapshot().first { it.playing }.url)
+    }
+
+    @Test fun aRealStreamUrlFromThePlayerWinsOverTheLength() {
+        val c = MediaCollector().also { it.reset(page) }
+        c.offerAndAdd("https://cdn.example.com/1.mp4", file("https://cdn.example.com/1.mp4"))
+        c.markPlayingManifest(10.0)
+        c.markPlaying("https://cdn.example.com/1.mp4")
+        c.offerAndAdd("https://video.example.com/a/master.m3u8", hlsOf(10.0, "https://video.example.com/a/720.m3u8"))
+        assertEquals("a later manifest of that length doesn't steal the mark", "https://cdn.example.com/1.mp4", c.snapshot().first { it.playing }.url)
+    }
+
+    @Test fun aBareLinkIsACandidateOnlyWhenAMediaElementOfThePagePlaysIt() {
+        val c = MediaCollector().also { it.reset(page) }
+        val bare = "https://media.example.com/v/8f3a9c2e?token=abc"
+        assertNull("a network request alone is ignored", c.offer(bare))
+        val candidate = c.offer(bare, fromElement = true)
+        assertNotNull("the page's <video> plays it, so it is checked", candidate)
+        assertEquals(MediaClassifier.Kind.UNKNOWN_MEDIA, candidate!!.kind)
+        assertNull("and only once", c.offer(bare, fromElement = true))
+    }
+
     @Test fun unsupportedItemsAreListedBelowDownloadableOnes() {
         val c = MediaCollector().also { it.reset(page) }
         val dash = MediaAnalysis.Found(
