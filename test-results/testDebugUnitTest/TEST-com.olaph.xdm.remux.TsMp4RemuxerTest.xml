@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.remux.TsMp4RemuxerTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:59" hostname="runnervm0hi8g" time="0.811">
+  <properties/>
+  <testcase name="progressIsMonotonicAndEndsAtTheFileSize" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.188"/>
+  <testcase name="cuttingLeadingBytesStillFindsTheStream" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.041"/>
+  <testcase name="outputOverwritesAnExistingFile" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.028"/>
+  <testcase name="anUnsupportedSecondAudioStreamIsLeftOutWhenAnotherOneCanBeCopied" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.03"/>
+  <testcase name="mp3AudioIsMarkedAsMpegAudioInTheEsds" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.032"/>
+  <testcase name="audioOnlyAacBecomesM4a" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.029"/>
+  <testcase name="startsAtALargePtsAndCrossesThe33BitWrap" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.045"/>
+  <testcase name="aTruncatedDownloadStillConvertsWhatIsThere" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.047"/>
+  <testcase name="aac44100IsMuxedOnItsExactGrid" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.038"/>
+  <testcase name="anUnsupportedAudioCodecFailsInsteadOfDroppingTheSound" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.024"/>
+  <testcase name="validTransportPacketsWithoutAnyAudioOrVideoAreReported" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.029"/>
+  <testcase name="aTimelineResetInTheMiddleIsStitchedIntoOneMonotonicTimeline" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.034"/>
+  <testcase name="anEmptyFileAndAFileThatIsTooShortAreReported" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.037"/>
+  <testcase name="garbageIsReportedAndLeavesNoOutput" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.028"/>
+  <testcase name="hlsSegmentsConcatenatedBehaveLikeOneStream" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.037"/>
+  <testcase name="h264AacInOneTsFile" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.05"/>
+  <testcase name="h265IsCopiedToo" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.066"/>
+  <testcase name="cancellingStopsTheConversionAndDeletesThePartialFile" classname="com.olaph.xdm.remux.TsMp4RemuxerTest" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

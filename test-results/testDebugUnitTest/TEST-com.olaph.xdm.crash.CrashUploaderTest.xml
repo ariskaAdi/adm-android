@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.crash.CrashUploaderTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:51" hostname="runnervm0hi8g" time="0.012">
+  <properties/>
+  <testcase name="any 2xx is accepted" classname="com.olaph.xdm.crash.CrashUploaderTest" time="0.002"/>
+  <testcase name="500 and 429 and redirects are retried" classname="com.olaph.xdm.crash.CrashUploaderTest" time="0.005"/>
+  <testcase name="posts json body with the app key header" classname="com.olaph.xdm.crash.CrashUploaderTest" time="0.001"/>
+  <testcase name="403 is rejected" classname="com.olaph.xdm.crash.CrashUploaderTest" time="0.002"/>
+  <testcase name="unreachable server is a retry, not an exception" classname="com.olaph.xdm.crash.CrashUploaderTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

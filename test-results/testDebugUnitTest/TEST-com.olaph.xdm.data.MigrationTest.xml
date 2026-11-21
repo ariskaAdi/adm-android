@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.data.MigrationTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:51" hostname="runnervm0hi8g" time="0.149">
+  <properties/>
+  <testcase name="migratedV4SchemaEqualsFreshV4Schema" classname="com.olaph.xdm.data.MigrationTest" time="0.088"/>
+  <testcase name="migratedV5SchemaEqualsFreshV5Schema" classname="com.olaph.xdm.data.MigrationTest" time="0.008"/>
+  <testcase name="migration3To4AddsTheExtraColumnAndKeepsEverythingElse" classname="com.olaph.xdm.data.MigrationTest" time="0.003"/>
+  <testcase name="migrationKeepsExistingDownloadsAndSegments" classname="com.olaph.xdm.data.MigrationTest" time="0.004"/>
+  <testcase name="migration2To3KeepsDownloadsAndMakesThemPlainHttp" classname="com.olaph.xdm.data.MigrationTest" time="0.002"/>
+  <testcase name="fullChainFromV1EqualsFreshV6Schema" classname="com.olaph.xdm.data.MigrationTest" time="0.007"/>
+  <testcase name="migratedV6SchemaEqualsFreshV6Schema" classname="com.olaph.xdm.data.MigrationTest" time="0.005"/>
+  <testcase name="migration4To5MakesEveryExistingDownloadPublicAndUnwatched" classname="com.olaph.xdm.data.MigrationTest" time="0.002"/>
+  <testcase name="migratedSchemaEqualsFreshV2Schema" classname="com.olaph.xdm.data.MigrationTest" time="0.004"/>
+  <testcase name="exportedSchemasMatchTheDeclaredVersions" classname="com.olaph.xdm.data.MigrationTest" time="0.001"/>
+  <testcase name="migration5To6AddsAnEmptySourcePageAndKeepsEverythingElse" classname="com.olaph.xdm.data.MigrationTest" time="0.001"/>
+  <testcase name="migratedV3SchemaEqualsFreshV3Schema" classname="com.olaph.xdm.data.MigrationTest" time="0.005"/>
+  <testcase name="everyStartingVersionReachesTheCurrentSchema" classname="com.olaph.xdm.data.MigrationTest" time="0.019"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

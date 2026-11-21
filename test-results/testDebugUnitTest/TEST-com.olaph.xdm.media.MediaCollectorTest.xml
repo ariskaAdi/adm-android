@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.media.MediaCollectorTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:58" hostname="runnervm0hi8g" time="0.01">
+  <properties/>
+  <testcase name="playingItemMovesToTheTopAndNewerComesFirst" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.002"/>
+  <testcase name="masterPlaylistAbsorbsItsVariantPlaylists" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="nonMediaNeverBecomesACandidate" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="navigatingToAnotherPageResetsEverything" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="unsupportedItemsAreListedBelowDownloadableOnes" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="aacIsAnAudioFileUntilAManifestAppears" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="segmentsAreCountedNotListedOnceAManifestWasSeen" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.004"/>
+  <testcase name="refererOfTheRequestingFrameIsKept" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="candidateCapProtectsAgainstSpamPages" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="blobPlaybackPicksTheManifestOfTheSameLengthNotTheNewest" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="blobPlaybackMarksTheNewestManifest" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="aManifestCheckedAfterThePlayEventTakesOverTheMarkWhenItsLengthFits" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.001"/>
+  <testcase name="playEventBeforeTheProbeFinishesStillMarksTheItem" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="releasedCandidatesCanBeOfferedAgain" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="aRealStreamUrlFromThePlayerWinsOverTheLength" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="newUrlsBecomeCandidatesOnlyOnce" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.001"/>
+  <testcase name="aBareLinkIsACandidateOnlyWhenAMediaElementOfThePagePlaysIt" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <testcase name="withoutAMatchingLengthTheNewestManifestIsStillTheGuess" classname="com.olaph.xdm.media.MediaCollectorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

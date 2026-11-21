@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.core.DownloadManagerTest" tests="42" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:33" hostname="runnervm0hi8g" time="7.527">
+  <properties/>
+  <testcase name="hlsTsIsConvertedAndSavedAsMp4" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.113"/>
+  <testcase name="downloadsAndSavesFile" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.057"/>
+  <testcase name="singleDeleteUsesTheSamePath" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.013"/>
+  <testcase name="afterARestartTheHeldQueueOnlyRunsOnceReleased" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.237"/>
+  <testcase name="pauseThenImmediateResumeDoesNotEndUpPaused" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.116"/>
+  <testcase name="hlsLiveStreamFailsWithAClearMessage" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.028"/>
+  <testcase name="clientErrorMarksFailedAndRetryWorksAfterServerRecovers" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.048"/>
+  <testcase name="anHlsLinkWithoutSeparateAudioNeverCallsTheMuxer" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.028"/>
+  <testcase name="restoreRequeuesInterruptedDownloadsAndResumesThem" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.033"/>
+  <testcase name="pauseKeepsProgressAndResumeFinishesWithSameContent" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.155"/>
+  <testcase name="wifiOnlyWaitsOnMeteredNetworkThenRuns" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.428"/>
+  <testcase name="progressIsPublishedWhileConvertingAndCancelDiscardsEverything" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.078"/>
+  <testcase name="respectsMaxParallelAndRunsQueueInOrder" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.052"/>
+  <testcase name="retryRightAfterCancelIsNeverLost" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.072"/>
+  <testcase name="deleteWhileRunningStopsTheTransfer" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.131"/>
+  <testcase name="cancelRemovesPartialDataAndRetryRestarts" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.118"/>
+  <testcase name="deleteManyScopedByFilterRemovesOnlyThoseItems" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.009"/>
+  <testcase name="runningDownloadIsParkedWhenNetworkBecomesMetered" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.118"/>
+  <testcase name="deleteManyCancelsActiveDownloadsAndRemovesTheirTempData" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.11"/>
+  <testcase name="browserHeadersArePersistedAndSentOnProbeAndAllSegmentsAcrossPauseResume" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.149"/>
+  <testcase name="deleteRemovesRowTempFileAndOptionallyTheSavedFile" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.08"/>
+  <testcase name="conversionCanBeSwitchedOff" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.028"/>
+  <testcase name="deleteMessageAndSummary" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.007"/>
+  <testcase name="notEnoughFreeSpaceSkipsConversionWithANote" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.068"/>
+  <testcase name="hlsDownloadRunsThroughTheQueueAndIsSavedAsTs" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.15"/>
+  <testcase name="startNowBypassesTheLimit" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.007"/>
+  <testcase name="deleteManyReturnsDeniedItemsForTheSystemRequestInsteadOfDroppingThem" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.007"/>
+  <testcase name="hlsVideoWithSeparateAudioIsMergedIntoOneMp4" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.15"/>
+  <testcase name="pauseAfterASplitKeepsTheSplitAndResumeFinishesTheFile" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.098"/>
+  <testcase name="existingNameGetsTheUsualCounterAfterConversion" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.028"/>
+  <testcase name="audioOnlyConversionIsNamedM4a" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.068"/>
+  <testcase name="deleteManyToleratesMissingFiles" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.006"/>
+  <testcase name="aKilledProcessDuringConversionRestartsFromTheTs" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.075"/>
+  <testcase name="hlsPauseKeepsFinishedSegmentsAndResumeFinishes" classname="com.olaph.xdm.core.DownloadManagerTest" time="4.141"/>
+  <testcase name="failedConversionKeepsTheTsAndSaysWhy" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.069"/>
+  <testcase name="deleteManyWithoutFilesKeepsTheFiles" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.007"/>
+  <testcase name="whenTheAudioCannotBeMergedTheVideoIsKeptWithANote" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.149"/>
+  <testcase name="downloadsAddedWithoutHeadersKeepWorkingAsBefore" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.027"/>
+  <testcase name="aKilledProcessAfterASplitResumesFromTheSavedRanges" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.096"/>
+  <testcase name="pauseAllAndResumeAll" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.052"/>
+  <testcase name="pausingDuringConversionKeepsTheTsAndResumeConvertsAgainWithoutRefetching" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.092"/>
+  <testcase name="anUnexpectedErrorInTheConverterIsAlsoNonFatal" classname="com.olaph.xdm.core.DownloadManagerTest" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

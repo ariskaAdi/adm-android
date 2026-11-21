@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.engine.DownloadEngine503Test" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:51" hostname="runnervm0hi8g" time="0.202">
+  <properties/>
+  <testcase name="permanent503StillExhaustsABoundedBudget" classname="com.olaph.xdm.engine.DownloadEngine503Test" time="0.028"/>
+  <testcase name="pauseDuringFallbackNetworkWaitPersistsSparseProgressAndResumes" classname="com.olaph.xdm.engine.DownloadEngine503Test" time="0.08"/>
+  <testcase name="oneTransient503RetriesWithoutCancellingItsSibling" classname="com.olaph.xdm.engine.DownloadEngine503Test" time="0.015"/>
+  <testcase name="networkChangeDuringReductionStillValidatesFileIdentity" classname="com.olaph.xdm.engine.DownloadEngine503Test" time="0.015"/>
+  <testcase name="repeatedOverlap503FallsBackWithoutLosingSparseProgress" classname="com.olaph.xdm.engine.DownloadEngine503Test" time="0.054"/>
+  <testcase name="aSingleRangeWithIdleWorkersKeepsItsOriginalRetryBudget" classname="com.olaph.xdm.engine.DownloadEngine503Test" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

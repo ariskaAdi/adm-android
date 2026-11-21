@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.engine.UtilsTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:58" hostname="runnervm0hi8g" time="0.001">
+  <properties/>
+  <testcase name="looksDownloadable" classname="com.olaph.xdm.engine.UtilsTest" time="0.001"/>
+  <testcase name="speedMeterRollingAverage" classname="com.olaph.xdm.engine.UtilsTest" time="0.0"/>
+  <testcase name="mimeTypes" classname="com.olaph.xdm.engine.UtilsTest" time="0.0"/>
+  <testcase name="eta" classname="com.olaph.xdm.engine.UtilsTest" time="0.0"/>
+  <testcase name="noUrl" classname="com.olaph.xdm.engine.UtilsTest" time="0.0"/>
+  <testcase name="speedMeterResetsWhenCounterGoesBack" classname="com.olaph.xdm.engine.UtilsTest" time="0.0"/>
+  <testcase name="extractsFirstUrlFromSharedText" classname="com.olaph.xdm.engine.UtilsTest" time="0.0"/>
+  <testcase name="httpUrlValidation" classname="com.olaph.xdm.engine.UtilsTest" time="0.0"/>
+  <testcase name="stripsTrailingPunctuation" classname="com.olaph.xdm.engine.UtilsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

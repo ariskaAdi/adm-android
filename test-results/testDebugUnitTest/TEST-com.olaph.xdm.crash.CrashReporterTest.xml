@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.crash.CrashReporterTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:50" hostname="runnervm0hi8g" time="0.473">
+  <properties/>
+  <testcase name="handler writes a fatal report and then calls the previous handler" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.078"/>
+  <testcase name="flush on next start uploads the pending report and deletes it" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.067"/>
+  <testcase name="a build without a relay writes and sends nothing" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.047"/>
+  <testcase name="handler survives a failing report and still chains" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.028"/>
+  <testcase name="test report does nothing when the switch is off" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.067"/>
+  <testcase name="default is on" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.027"/>
+  <testcase name="switch off sends nothing and drops what was waiting" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.033"/>
+  <testcase name="test report rejected with 403 is not queued" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.029"/>
+  <testcase name="test report is queued for retry when the relay is unreachable" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.035"/>
+  <testcase name="test report is non-fatal with the settings message and is sent directly" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.034"/>
+  <testcase name="switch off writes nothing but still calls the previous handler" classname="com.olaph.xdm.crash.CrashReporterTest" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

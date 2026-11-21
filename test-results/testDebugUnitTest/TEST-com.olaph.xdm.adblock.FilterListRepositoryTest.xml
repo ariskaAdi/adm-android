@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.adblock.FilterListRepositoryTest" tests="24" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:47:53" hostname="runnervm0hi8g" time="0.841">
+  <properties/>
+  <testcase name="changedPrivateRulesInvalidateTheCompiledCache" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.248"/>
+  <testcase name="corruptCacheIsRebuilt" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.009"/>
+  <testcase name="onlyEnabledListsAreDownloaded" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.041"/>
+  <testcase name="aFresherBundledSnapshotBeatsAnOlderDownload" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.053"/>
+  <testcase name="formatRoundTripIsSortedAndKeepsTheDate" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.003"/>
+  <testcase name="missingAssetsLeaveEverythingAllowed" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.002"/>
+  <testcase name="secondLoadUsesTheCompiledCache" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.007"/>
+  <testcase name="oneFailedListDoesNotStopTheOthers" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.05"/>
+  <testcase name="missingPrivateRulesAreSkippedQuietly" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.003"/>
+  <testcase name="loadsTheBundledSnapshots" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.004"/>
+  <testcase name="updateDownloadsPreprocessesStoresAndSwaps" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.158"/>
+  <testcase name="oversizedDownloadIsAborted" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.018"/>
+  <testcase name="headerlessFileStillParses" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.002"/>
+  <testcase name="corruptStoredFileFallsBackToTheBundledSnapshot" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.005"/>
+  <testcase name="serverErrorKeepsTheCurrentLists" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.016"/>
+  <testcase name="presentPrivateRulesAreAddedToTheList" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.005"/>
+  <testcase name="listDatesFromTheKnownHeaders" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.002"/>
+  <testcase name="assetsAsPackagedInTheApkAreFound" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.004"/>
+  <testcase name="updatedListsSurviveARestart" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.067"/>
+  <testcase name="wifiOnlyOnMeteredNetworkDoesNotTouchTheNetwork" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.003"/>
+  <testcase name="disabledListsAreNotLoaded" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.005"/>
+  <testcase name="tinyOrGarbageListsAreRejected" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.13"/>
+  <testcase name="filterListFormatRoundTripAndPlainText" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.002"/>
+  <testcase name="readersAcceptGzipAndPlainText" classname="com.olaph.xdm.adblock.FilterListRepositoryTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

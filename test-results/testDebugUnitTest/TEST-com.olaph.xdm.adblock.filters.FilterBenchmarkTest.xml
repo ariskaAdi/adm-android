@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.adblock.filters.FilterBenchmarkTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:47:54" hostname="runnervm0hi8g" time="4.877">
+  <properties/>
+  <testcase name="loadAndMatchTenThousandUrls" classname="com.olaph.xdm.adblock.filters.FilterBenchmarkTest" time="4.877"/>
+  <system-out><![CDATA[[bench] build all lists: 1220 ms; EngineStats(hostRules=312267, networkRules=17624, cosmeticRules=77955, skipped=3305, noTokenRules=78, highGeneric=469)
+[bench] retained heap ≈ 26.1 MB
+[bench] easylist: parse 74 ms, build 60 ms, ListCounts(network=7518, cosmetic=24318, hosts=48518, skipped=58)
+[bench] adguard-base: parse 119 ms, build 74 ms, ListCounts(network=10124, cosmetic=24141, hosts=11813, skipped=3247)
+[bench] adguard-dns: parse 203 ms, build 120 ms, ListCounts(network=0, cosmetic=0, hosts=180647, skipped=0)
+[bench] stevenblack: parse 69 ms, build 21 ms, ListCounts(network=0, cosmetic=0, hosts=72525, skipped=0)
+[bench] xdm-extra: parse 0 ms, build 0 ms, ListCounts(network=0, cosmetic=0, hosts=0, skipped=0)
+[bench] warm full build: 632 ms
+[bench] cache: 5,604,484 bytes, write 901 ms, load 118 ms
+[bench] cache: 5,604,484 bytes, write 901 ms, load 215 ms
+[bench] cache: 5,604,484 bytes, write 901 ms, load 90 ms
+[bench] match 10k URLs: 0.0122 ms/request (1608 blocked)
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

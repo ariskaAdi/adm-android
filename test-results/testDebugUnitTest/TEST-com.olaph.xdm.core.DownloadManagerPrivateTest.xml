@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.core.DownloadManagerPrivateTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:08" hostname="runnervm0hi8g" time="0.315">
+  <properties/>
+  <testcase name="moveToPrivateKeepsEverythingWhenTheCopyFails" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.033"/>
+  <testcase name="moveToPrivateRejectsACopyOfTheWrongSize" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.018"/>
+  <testcase name="notificationTextIsNeutralOnlyForPrivateItems" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.005"/>
+  <testcase name="onlyFinishedPublicItemsCanBeMovedIn" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.009"/>
+  <testcase name="publicDownloadsStillGoToThePublicStore" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.075"/>
+  <testcase name="renameStaysInsideTheVault" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.011"/>
+  <testcase name="privateDownloadCompletesIntoTheVaultAndNeverTouchesThePublicStore" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.053"/>
+  <testcase name="moveToPrivateWhenDeletingThePublicCopyFailsReportsIt" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.008"/>
+  <testcase name="privateDeleteRemovesVaultFilesAndIgnoresPublicItems" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.01"/>
+  <testcase name="moveToPrivateWhenThePublicCopyMayNotBeDeletedKeepsBothAndAsks" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.008"/>
+  <testcase name="moveToPrivateCopiesVerifiesThenDeletesThePublicCopy" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.012"/>
+  <testcase name="withoutAPrivateFolderAPrivateDownloadFailsInsteadOfGoingPublic" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.028"/>
+  <testcase name="publicDeleteAllIgnoresPrivateItems" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.025"/>
+  <testcase name="moveOutGoesThroughThePublicStoreAndLeavesTheVault" classname="com.olaph.xdm.core.DownloadManagerPrivateTest" time="0.02"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.engine.ExpiringUrlEngineTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:54" hostname="runnervm0hi8g" time="1.009">
+  <properties/>
+  <testcase name="plannerCapsTheSegmentSizeAndKeepsTheRangesContiguous" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.003"/>
+  <testcase name="withoutARefreshHookA403StillFailsLikeBefore" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.007"/>
+  <testcase name="halfAChunkThatArrivedBeforeTheUrlExpiredIsNotFetchedAgain" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.134"/>
+  <testcase name="theFileIsFetchedInCappedChunksWithNoProbeRequest" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.048"/>
+  <testcase name="neverMoreConnectionsThanRequested" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.09"/>
+  <testcase name="parallelSegmentsAllSwitchToTheNewUrlWithOneRenewal" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.05"/>
+  <testcase name="gone410IsTreatedLikeForbidden" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.213"/>
+  <testcase name="aSecondRunContinuesWithTheSavedSegmentsAndRefetchesNothing" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.095"/>
+  <testcase name="renewalsThatKeepTheTransferGoingAreNotCountedAgainstTheLimit" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.175"/>
+  <testcase name="anUnknownLengthIsProbedLikeBefore" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.134"/>
+  <testcase name="aServerThatRefusesEveryUrlStopsAfterAFewRenewals" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.007"/>
+  <testcase name="anExpiredUrlIsReplacedAndTheBytesAlreadyWrittenAreKept" classname="com.olaph.xdm.engine.ExpiringUrlEngineTest" time="0.052"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

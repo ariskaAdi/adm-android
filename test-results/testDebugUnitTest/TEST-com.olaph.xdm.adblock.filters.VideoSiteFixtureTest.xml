@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:01" hostname="runnervm0hi8g" time="4.674">
+  <properties/>
+  <testcase name="everyAdRequestIsBlockedWithInferredTypes" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.511"/>
+  <testcase name="fixtureLoads" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.005"/>
+  <testcase name="bundledListsStillHideSiteSpecificElements" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.52"/>
+  <testcase name="cosmeticRulesForASecondSite" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.435"/>
+  <testcase name="everyAdRequestIsBlockedWithChromeTypes" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.489"/>
+  <testcase name="smartpopPopupsAreAds" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.431"/>
+  <testcase name="theSiteAndItsCdnsAreNeverBlocked" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.463"/>
+  <testcase name="adHlsNeverReachesTheVideoList" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.433"/>
+  <testcase name="cosmeticRulesForTheVideoSite" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.494"/>
+  <testcase name="adApiAndThirdPartyScriptsAreBlockedOnTheSite" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.416"/>
+  <testcase name="adNetworkRequestsMissingFromTheCaptureAreBlockedToo" classname="com.olaph.xdm.adblock.filters.VideoSiteFixtureTest" time="0.476"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.olaph.xdm.crash.CrashPayloadTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T08:48:47" hostname="runnervm0hi8g" time="2.697">
+  <properties/>
+  <testcase name="stacktrace is cut at 100000 chars" classname="com.olaph.xdm.crash.CrashPayloadTest" time="2.332"/>
+  <testcase name="every nested Caused by is kept and its message scrubbed" classname="com.olaph.xdm.crash.CrashPayloadTest" time="0.054"/>
+  <testcase name="a youtube extractor failure leaves no title, channel, id or stream url in the payload" classname="com.olaph.xdm.crash.CrashPayloadTest" time="0.04"/>
+  <testcase name="extra carries only memory, foreground and uptime" classname="com.olaph.xdm.crash.CrashPayloadTest" time="0.031"/>
+  <testcase name="body stays under the relay cap even with wide characters" classname="com.olaph.xdm.crash.CrashPayloadTest" time="0.179"/>
+  <testcase name="fatal flag is passed through" classname="com.olaph.xdm.crash.CrashPayloadTest" time="0.031"/>
+  <testcase name="all contract fields are present with the right types" classname="com.olaph.xdm.crash.CrashPayloadTest" time="0.03"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
