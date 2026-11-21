@@ -1,0 +1,9 @@
+FAIL
+ok   cold start
+ok   tab Browser
+ok   dark mode
+ok   resume from background
+YTTEST FAIL no result within 180 s
+VAULTTEST FAIL no result within 90 s
+SAVETEST FAIL no result within 90 s
+ok   monkey 300 events
